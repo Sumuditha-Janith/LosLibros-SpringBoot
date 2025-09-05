@@ -13,14 +13,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional // 2. Added for transaction management
+@Transactional
 public class AuthorServiceImpl implements AuthorService {
 
-    // 1. Switched to final fields for constructor injection
     private final AuthorRepository authorRepository;
     private final ModelMapper modelMapper;
 
-    // 1. Using Constructor Injection instead of @Autowired on fields
     public AuthorServiceImpl(AuthorRepository authorRepository, ModelMapper modelMapper) {
         this.authorRepository = authorRepository;
         this.modelMapper = modelMapper;
@@ -34,7 +32,7 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    @Transactional(readOnly = true) // Optimization for read operations
+    @Transactional(readOnly = true)
     public List<AuthorDTO> getAllAuthors() {
         return authorRepository.findAll().stream()
                 .map(author -> modelMapper.map(author, AuthorDTO.class))
@@ -42,10 +40,9 @@ public class AuthorServiceImpl implements AuthorService {
     }
 
     @Override
-    @Transactional(readOnly = true) // Optimization for read operations
+    @Transactional(readOnly = true)
     public AuthorDTO getAuthorById(Long id) {
         Author author = authorRepository.findById(id)
-                // 3. Using a more specific exception for better error handling
                 .orElseThrow(() -> new EntityNotFoundException("Author not found with id: " + id));
         return modelMapper.map(author, AuthorDTO.class);
     }
@@ -53,7 +50,6 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     public void deleteAuthor(Long id) {
         if (!authorRepository.existsById(id)) {
-            // 3. Using a more specific exception
             throw new EntityNotFoundException("Author not found with id: " + id);
         }
         authorRepository.deleteById(id);
@@ -62,15 +58,11 @@ public class AuthorServiceImpl implements AuthorService {
     @Override
     public AuthorDTO updateAuthor(Long id, AuthorDTO authorDTO) {
         Author existingAuthor = authorRepository.findById(id)
-                // 3. Using a more specific exception
                 .orElseThrow(() -> new EntityNotFoundException("Author not found with id: " + id));
 
         existingAuthor.setAuthorName(authorDTO.getAuthorName());
         existingAuthor.setAuthorDescription(authorDTO.getAuthorDescription());
 
-        // The save is technically not required if @Transactional is present,
-        // as changes to a managed entity will be flushed automatically.
-        // However, it's good practice to keep it for clarity.
         Author updatedAuthor = authorRepository.save(existingAuthor);
         return modelMapper.map(updatedAuthor, AuthorDTO.class);
     }
