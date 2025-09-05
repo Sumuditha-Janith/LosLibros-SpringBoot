@@ -16,19 +16,19 @@ public class BookController {
     @Autowired
     private BookService bookService;
 
-    @PostMapping
+    @PostMapping("save")
     public ResponseEntity<BookDTO> createBook(@RequestBody BookDTO bookDTO) {
         BookDTO savedBook = bookService.saveBook(bookDTO);
         return ResponseEntity.ok(savedBook);
     }
 
-    @GetMapping
+    @GetMapping("getAllBooks")
     public ResponseEntity<List<BookDTO>> getAllBooks() {
         List<BookDTO> books = bookService.getAllBooks();
         return ResponseEntity.ok(books);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("get/{id}")
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
         BookDTO book = bookService.getBookById(id);
         return ResponseEntity.ok(book);

@@ -16,19 +16,19 @@ public class AuthorController {
     @Autowired
     private AuthorService authorService;
 
-    @PostMapping
+    @PostMapping("save")
     public ResponseEntity<AuthorDTO> createAuthor(@RequestBody AuthorDTO authorDTO) {
         AuthorDTO savedAuthor = authorService.saveAuthor(authorDTO);
         return ResponseEntity.ok(savedAuthor);
     }
 
-    @GetMapping
+    @GetMapping("getAllAuth")
     public ResponseEntity<List<AuthorDTO>> getAllAuthors() {
         List<AuthorDTO> authors = authorService.getAllAuthors();
         return ResponseEntity.ok(authors);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("get/{id}")
     public ResponseEntity<AuthorDTO> getAuthorById(@PathVariable Long id) {
         AuthorDTO author = authorService.getAuthorById(id);
         return ResponseEntity.ok(author);
