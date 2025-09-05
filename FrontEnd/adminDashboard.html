@@ -49,155 +49,111 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="text-center mb-4">
-            <h4><i class="fas fa-book me-2"></i>LosLibros</h4>
-            <p class="text-muted">Admin Dashboard</p>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="text-center mb-4">
+        <h4><i class="fas fa-book me-2"></i>LosLibros</h4>
+        <p class="text-muted">Admin Dashboard</p>
+    </div>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link active" href="adminDashboard.html">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="books.html">
+                <i class="fas fa-book me-2"></i>Books
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="fas fa-user-tie me-2"></i>Authors
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="fas fa-tags me-2"></i>Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <i class="fas fa-users me-2"></i>Users
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Admin Dashboard</h2>
+        <div>
+            <span class="badge bg-primary" id="userInfo">Welcome, Admin</span>
         </div>
-        <ul class="nav flex-column">
-            <li class="nav-item">
-                <a class="nav-link active" href="#">
-                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-book me-2"></i>Books
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-user-tie me-2"></i>Authors
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-tags me-2"></i>Categories
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="fas fa-users me-2"></i>Users
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                </a>
-            </li>
-        </ul>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Admin Dashboard</h2>
-            <div>
-                <span class="badge bg-primary" id="userInfo">Welcome, Admin</span>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-4">
-                <div class="card dashboard-card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Books</h5>
-                                <h2 class="card-text">125</h2>
-                            </div>
-                            <div>
-                                <i class="fas fa-book fa-3x opacity-50"></i>
-                            </div>
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card dashboard-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title">Books</h5>
+                            <h2 class="card-text" id="booksCount">0</h2>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-4">
-                <div class="card dashboard-card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Authors</h5>
-                                <h2 class="card-text">45</h2>
-                            </div>
-                            <div>
-                                <i class="fas fa-user-tie fa-3x opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-4">
-                <div class="card dashboard-card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Categories</h5>
-                                <h2 class="card-text">12</h2>
-                            </div>
-                            <div>
-                                <i class="fas fa-tags fa-3x opacity-50"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-4">
-                <div class="card dashboard-card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h5 class="card-title">Users</h5>
-                                <h2 class="card-text">89</h2>
-                            </div>
-                            <div>
-                                <i class="fas fa-users fa-3x opacity-50"></i>
-                            </div>
+                        <div>
+                            <i class="fas fa-book fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Recent Activities</h5>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item">New book added: "The Great Gatsby"</li>
-                            <li class="list-group-item">User registration: john_doe</li>
-                            <li class="list-group-item">Category updated: Fiction</li>
-                            <li class="list-group-item">Author profile modified: F. Scott Fitzgerald</li>
-                        </ul>
+        <div class="col-md-3 mb-4">
+            <div class="card dashboard-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title">Authors</h5>
+                            <h2 class="card-text" id="authorsCount">0</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-user-tie fa-3x opacity-50"></i>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 mb-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>System Status</h5>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card dashboard-card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title">Categories</h5>
+                            <h2 class="card-text" id="categoriesCount">0</h2>
+                        </div>
+                        <div>
+                            <i class="fas fa-tags fa-3x opacity-50"></i>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <span class="fw-bold">Database:</span>
-                            <span class="badge bg-success">Online</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card dashboard-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title">Users</h5>
+                            <h2 class="card-text">89</h2>
                         </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">Authentication:</span>
-                            <span class="badge bg-success">Active</span>
-                        </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">API Status:</span>
-                            <span class="badge bg-success">Running</span>
-                        </div>
-                        <div class="mb-3">
-                            <span class="fw-bold">Storage:</span>
-                            <span class="badge bg-warning">75% Used</span>
+                        <div>
+                            <i class="fas fa-users fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
@@ -205,54 +161,127 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Check authentication
-            const token = localStorage.getItem('token');
-            const username = localStorage.getItem('username');
-            const role = localStorage.getItem('role');
-            
-            if (!token || role !== 'ADMIN') {
-                window.location.href = 'signIn.html';
-                return;
-            }
-            
-            // Show page content
-            $('body').show();
-            $('#userInfo').text(`Welcome, ${username} (${role})`);
-            
-            // Logout functionality
-            $('#logoutBtn').on('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-                localStorage.removeItem('role');
-                window.location.href = 'index.html';
-            });
-            
-            // Fetch user info from API
-            $.ajax({
-                url: 'http://localhost:8080/api/user/info',
-                method: 'GET',
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                },
-                success: function(response) {
-                    $('#userInfo').text(`Welcome, ${response.username} (${response.role})`);
-                },
-                error: function(xhr) {
-                    if (xhr.status === 401) {
-                        alert('Session expired. Please login again.');
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('username');
-                        localStorage.removeItem('role');
-                        window.location.href = 'signIn.html';
-                    }
-                }
-            });
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="books.html" class="btn btn-primary">
+                            <i class="fas fa-book me-2"></i>Manage Books
+                        </a>
+                        <button class="btn btn-success">
+                            <i class="fas fa-user-tie me-2"></i>Manage Authors
+                        </button>
+                        <button class="btn btn-warning">
+                            <i class="fas fa-tags me-2"></i>Manage Categories
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="fw-bold">Database:</span>
+                        <span class="badge bg-success">Online</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="fw-bold">Authentication:</span>
+                        <span class="badge bg-success">Active</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="fw-bold">API Status:</span>
+                        <span class="badge bg-success">Running</span>
+                    </div>
+                    <div class="mb-3">
+                        <span class="fw-bold">Storage:</span>
+                        <span class="badge bg-warning">75% Used</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+    $(document).ready(function() {
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        const role = localStorage.getItem('role');
+
+        if (!token || role !== 'ADMIN') {
+            window.location.href = 'signIn.html';
+            return;
+        }
+
+        // Show page content
+        $('body').show();
+        $('#userInfo').text(`Welcome, ${username} (${role})`);
+
+        // Load initial data
+        loadBooks();
+        loadAuthors();
+        loadCategories();
+
+        // Logout functionality
+        $('#logoutBtn').on('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'index.html';
         });
-    </script>
+
+        // Fetch user info from API
+        makeApiCall('/api/user/info', 'GET')
+            .then(response => {
+                $('#userInfo').text(`Welcome, ${response.username} (${role})`);
+            })
+            .catch(error => {
+                console.error('Failed to fetch user info:', error);
+            });
+    });
+
+    function loadBooks() {
+        makeApiCall('/api/v1/books/getAllBooks', 'GET')
+            .then(books => {
+                $('#booksCount').text(books.length);
+            })
+            .catch(error => {
+                console.error('Failed to load books:', error);
+            });
+    }
+
+    function loadAuthors() {
+        makeApiCall('/api/v1/authors/getAllAuth', 'GET')
+            .then(authors => {
+                $('#authorsCount').text(authors.length);
+            })
+            .catch(error => {
+                console.error('Failed to load authors:', error);
+            });
+    }
+
+    function loadCategories() {
+        makeApiCall('/api/v1/categories/getAllCat', 'GET')
+            .then(categories => {
+                $('#categoriesCount').text(categories.length);
+            })
+            .catch(error => {
+                console.error('Failed to load categories:', error);
+            });
+    }
+</script>
 </body>
 </html>
