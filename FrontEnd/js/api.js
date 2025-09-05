@@ -1,12 +1,16 @@
-// api.js - Utility functions for API calls
 const API_BASE_URL = 'http://localhost:8080';
 
-function getAuthHeaders() {
+function getAuthHeaders(contentType = 'application/json') {
     const token = localStorage.getItem('token');
-    return {
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json'
+    const headers = {
+        'Authorization': 'Bearer ' + token
     };
+
+    if (contentType) {
+        headers['Content-Type'] = contentType;
+    }
+
+    return headers;
 }
 
 function handleApiError(xhr) {
@@ -24,13 +28,13 @@ function handleApiError(xhr) {
     return false;
 }
 
-function makeApiCall(url, method, data = null) {
+function makeApiCall(url, method, data = null, isText = false) {
     return new Promise((resolve, reject) => {
-        $.ajax({
+        const contentType = isText ? 'text/plain' : 'application/json';
+        const config = {
             url: API_BASE_URL + url,
             method: method,
-            headers: getAuthHeaders(),
-            data: data ? JSON.stringify(data) : null,
+            headers: getAuthHeaders(contentType),
             success: function(response) {
                 resolve(response);
             },
@@ -40,6 +44,12 @@ function makeApiCall(url, method, data = null) {
                     reject(errorMsg);
                 }
             }
-        });
+        };
+
+        if (data) {
+            config.data = isText ? data : JSON.stringify(data);
+        }
+
+        $.ajax(config);
     });
 }

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - LosLibros</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: none;
+            background-color: #f8f9fa;
+        }
+        .action-buttons {
+            white-space: nowrap;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .role-badge {
+            font-size: 0.85em;
+            padding: 0.35em 0.65em;
+        }
+        .add-user-btn {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="container" style="margin-top: 80px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Users</h2>
+        <span class="badge bg-primary" id="userRoleInfo"></span>
+    </div>
+
+    <button class="btn btn-success add-user-btn" id="addUserBtn">
+        <i class="fas fa-plus me-1"></i> Add New User
+    </button>
+
+    <div class="alert alert-info" id="loadingAlert">
+        <i class="fas fa-spinner fa-spin me-2"></i> Loading users...
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover" id="usersTable">
+            <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Users will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alert alert-warning" id="noUsersAlert" style="display: none;">
+        <i class="fas fa-exclamation-circle me-2"></i> No users found.
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="addUsername" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="addUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="addEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addPassword" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="addPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addRole" class="form-label">Role *</label>
+                        <select class="form-select" id="addRole" required>
+                            <option value="USER">User</option>
+                            <option value="EMPLOYEE">Employee</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="createUserBtn">Create User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId">
+                    <div class="mb-3">
+                        <label for="editUsername" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="editUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="editEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRole" class="form-label">Role *</label>
+                        <select class="form-select" id="editRole" required>
+                            <option value="USER">User</option>
+                            <option value="EMPLOYEE">Employee</option>
+                            <option value="ADMIN">Admin</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveUserBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the user "<span id="deleteUserName"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/navbar.js"></script>
+<script>
+    let currentUserId = null;
+    let allUsers = [];
+
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        if (!token || role !== 'ADMIN') {
+            window.location.href = 'signIn.html';
+            return;
+        }
+
+        // Show page content
+        $('body').show();
+        $('#userRoleInfo').text(`Role: ${role}`);
+
+        // Load users data
+        loadUsers();
+
+        // Set up event listeners
+        $('#addUserBtn').on('click', showAddModal);
+        $('#createUserBtn').on('click', createUser);
+        $('#saveUserBtn').on('click', saveUser);
+        $('#confirmDeleteBtn').on('click', deleteUser);
+    });
+
+    function showAddModal() {
+        $('#addUserForm')[0].reset();
+        const addModal = new bootstrap.Modal(document.getElementById('addUserModal'));
+        addModal.show();
+    }
+
+    function showEditModal(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
+
+        $('#editUserId').val(user.id);
+        $('#editUsername').val(user.username);
+        $('#editEmail').val(user.email);
+        $('#editRole').val(user.role);
+
+        const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        editModal.show();
+    }
+
+    function showDeleteModal(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
+
+        $('#deleteUserName').text(user.username);
+        currentUserId = userId;
+
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+
+    function createUser() {
+        const userData = {
+            username: $('#addUsername').val(),
+            email: $('#addEmail').val(),
+            password: $('#addPassword').val(),
+            role: $('#addRole').val()
+        };
+
+        if (!userData.username || !userData.email || !userData.password) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // Use the auth register endpoint to create a new user
+        makeApiCall('/auth/register', 'POST', userData)
+            .then(response => {
+                alert('User created successfully!');
+                $('#addUserModal').modal('hide');
+                loadUsers();
+            })
+            .catch(error => {
+                alert('Failed to create user: ' + error);
+            });
+    }
+
+    function saveUser() {
+        const userId = $('#editUserId').val();
+        const userData = {
+            username: $('#editUsername').val(),
+            email: $('#editEmail').val()
+        };
+
+        if (!userData.username || !userData.email) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const role = $('#editRole').val();
+
+        // First update user details
+        makeApiCall(`/api/v1/users/${userId}`, 'PUT', userData)
+            .then(updatedUser => {
+                // Then update role - send as regular JSON data
+                return makeApiCall(`/api/v1/users/${userId}/role`, 'PATCH', role);
+            })
+            .then(finalUser => {
+                alert('User updated successfully!');
+                $('#editUserModal').modal('hide');
+                loadUsers();
+            })
+            .catch(error => {
+                alert('Failed to update user: ' + error);
+            });
+    }
+
+    function deleteUser() {
+        if (!currentUserId) return;
+
+        makeApiCall(`/api/v1/users/${currentUserId}`, 'DELETE')
+            .then(function() {
+                alert('User deleted successfully!');
+                $('#deleteModal').modal('hide');
+                loadUsers();
+            })
+            .catch(function(error) {
+                alert('Failed to delete user: ' + error);
+            });
+    }
+
+    function loadUsers() {
+        $('#loadingAlert').show();
+        $('#noUsersAlert').hide();
+
+        makeApiCall('/api/v1/users', 'GET')
+            .then(function(users) {
+                allUsers = users;
+                displayUsers(users);
+                $('#loadingAlert').hide();
+            })
+            .catch(function(error) {
+                console.error('Failed to load users:', error);
+                $('#loadingAlert').hide();
+                $('#noUsersAlert').show();
+            });
+    }
+
+    function displayUsers(users) {
+        const tbody = $('#usersTable tbody');
+        tbody.empty();
+
+        if (users.length === 0) {
+            $('#noUsersAlert').show();
+            return;
+        }
+
+        users.forEach(function(user) {
+            let roleBadgeClass = 'bg-secondary';
+            if (user.role === 'ADMIN') roleBadgeClass = 'bg-danger';
+            if (user.role === 'EMPLOYEE') roleBadgeClass = 'bg-warning';
+            if (user.role === 'USER') roleBadgeClass = 'bg-info';
+
+            const row = `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <span class="badge ${roleBadgeClass} role-badge">${user.role}</span>
+                    </td>
+                    <td class="action-buttons">
+                        <button class="btn btn-sm btn-warning edit-user" data-id="${user.id}" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-user" data-id="${user.id}" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+
+        // Add event listeners to action buttons
+        $('.edit-user').on('click', function() {
+            showEditModal($(this).data('id'));
+        });
+
+        $('.delete-user').on('click', function() {
+            showDeleteModal($(this).data('id'));
+        });
+    }
+
+</script>
+</body>
+</html>

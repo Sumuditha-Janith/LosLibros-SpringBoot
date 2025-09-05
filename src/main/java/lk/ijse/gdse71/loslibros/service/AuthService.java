@@ -38,16 +38,11 @@ public class AuthService {
             throw new RuntimeException("Username is already exist");
         }
 
-        // Prevent users from registering as ADMIN or EMPLOYEE
-        if (!registerDTO.getRole().equalsIgnoreCase("USER")) {
-            throw new RuntimeException("Invalid role selection");
-        }
-
         User user = User.builder()
                 .username(registerDTO.getUsername())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .email(registerDTO.getEmail())
-                .role(Role.USER) // Force USER role
+                .role(Role.valueOf(registerDTO.getRole().toUpperCase()))
                 .build();
 
         userRepository.save(user);
