@@ -1,4 +1,9 @@
 package lk.ijse.gdse71.loslibros.repository;
 
-public class AuthorRepository {
+import lk.ijse.gdse71.loslibros.entity.Author;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface AuthorRepository extends JpaRepository<Author, Long> {
 }
