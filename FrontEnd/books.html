@@ -181,6 +181,11 @@
         $('body').show();
         $('#userRoleInfo').text(`Role: ${role}`);
 
+        // Hide add button for USER role
+        if (role === 'USER') {
+            $('#addBookBtn').hide();
+        }
+
         // Load books and dropdown data
         loadBooks();
         loadAuthorsDropdown();
