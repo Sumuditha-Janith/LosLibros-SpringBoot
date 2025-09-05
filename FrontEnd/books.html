@@ -6,220 +6,433 @@
     <title>Manage Books - LosLibros</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: none;
+            background-color: #f8f9fa;
+        }
+        .action-buttons {
+            white-space: nowrap;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
 </head>
-<body style="display: none;">
-    <div id="navbar-container"></div>
-    
-    <div class="container" style="margin-top: 80px;">
+<body>
+<div id="navbar-container"></div>
+
+<div class="container" style="margin-top: 80px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Manage Books</h2>
-        
-        <div class="d-flex justify-content-between mb-3">
-            <button class="btn btn-primary" id="addBookBtn" style="display: none;">
-                <i class="fas fa-plus me-1"></i> Add New Book
+        <span class="badge bg-primary" id="userRoleInfo"></span>
+    </div>
+
+    <div class="d-flex justify-content-between mb-3">
+        <button class="btn btn-primary" id="addBookBtn">
+            <i class="fas fa-plus me-1"></i> Add New Book
+        </button>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search books..." style="width: 250px;">
+            <button class="btn btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i>
             </button>
         </div>
-        
-        <table class="table table-striped" id="booksTable">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Actions</th>
-                </tr>
+    </div>
+
+    <div class="alert alert-info" id="loadingAlert">
+        <i class="fas fa-spinner fa-spin me-2"></i> Loading books...
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover" id="booksTable">
+            <thead class="table-dark">
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
             </thead>
             <tbody>
-                <!-- Books will be populated here -->
+            <!-- Books will be populated here -->
             </tbody>
         </table>
     </div>
 
-    <!-- Add Book Modal -->
-    <div class="modal fade" id="addBookModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Book</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="addBookForm">
-                        <div class="mb-3">
-                            <label for="bookTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="bookTitle" required>
+    <div class="alert alert-warning" id="noBooksAlert" style="display: none;">
+        <i class="fas fa-exclamation-circle me-2"></i> No books found.
+    </div>
+</div>
+
+<!-- Add/Edit Book Modal -->
+<div class="modal fade" id="bookModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add New Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bookForm">
+                    <input type="hidden" id="bookId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookTitle" class="form-label">Title *</label>
+                                <input type="text" class="form-control" id="bookTitle" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="bookAuthor" class="form-label">Author</label>
-                            <select class="form-select" id="bookAuthor" required>
-                                <option value="">Select Author</option>
-                                <!-- Authors will be populated here -->
-                            </select>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookPrice" class="form-label">Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" min="0" class="form-control" id="bookPrice" required>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="bookCategory" class="form-label">Category</label>
-                            <select class="form-select" id="bookCategory" required>
-                                <option value="">Select Category</option>
-                                <!-- Categories will be populated here -->
-                            </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookAuthor" class="form-label">Author *</label>
+                                <select class="form-select" id="bookAuthor" required>
+                                    <option value="">Select Author</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="bookPrice" class="form-label">Price</label>
-                            <input type="number" step="0.01" class="form-control" id="bookPrice" required>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookCategory" class="form-label">Category *</label>
+                                <select class="form-select" id="bookCategory" required>
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="bookQuantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="bookQuantity" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookQuantity" class="form-label">Quantity *</label>
+                                <input type="number" min="0" class="form-control" id="bookQuantity" required>
+                            </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveBookBtn">Save Book</button>
-                </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookImage" class="form-label">Image URL</label>
+                                <input type="url" class="form-control" id="bookImage" placeholder="https://example.com/image.jpg">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveBookBtn">Save Book</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/navbar.js"></script>
-    <script>
-        $(document).ready(function() {
-            const token = localStorage.getItem('token');
-            const role = localStorage.getItem('role');
-            
-            if (!token) {
-                window.location.href = 'signIn.html';
-                return;
-            }
-            
-            // Show page content
-            $('body').show();
-            
-            // Show add button only for ADMIN and EMPLOYEE
-            if (role === 'ADMIN' || role === 'EMPLOYEE') {
-                $('#addBookBtn').show();
-            }
-            
-            // Load books and dropdown data
-            loadBooks();
-            loadAuthorsDropdown();
-            loadCategoriesDropdown();
-            
-            // Set up event listeners
-            $('#addBookBtn').on('click', function() {
-                $('#addBookModal').modal('show');
-            });
-            
-            $('#saveBookBtn').on('click', function() {
-                const bookData = {
-                    bookTitle: $('#bookTitle').val(),
-                    bookPrice: parseFloat($('#bookPrice').val()),
-                    bookQuantity: parseInt($('#bookQuantity').val()),
-                    bookAuthor: { authorId: parseInt($('#bookAuthor').val()) },
-                    bookCategory: { categoryId: parseInt($('#bookCategory').val()) }
-                };
-                
-                makeApiCall('/api/v1/books/save', 'POST', bookData)
-                    .then(newBook => {
-                        alert('Book added successfully!');
-                        $('#addBookModal').modal('hide');
-                        $('#addBookForm')[0].reset();
-                        loadBooks();
-                    })
-                    .catch(error => {
-                        alert('Failed to add book: ' + error);
-                    });
-            });
-        });
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the book "<span id="deleteBookTitle"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        function loadBooks() {
-            makeApiCall('/api/v1/books/getAllBooks', 'GET')
-                .then(books => {
-                    const tbody = $('#booksTable tbody');
-                    tbody.empty();
-                    
-                    books.forEach(book => {
-                        const row = `
-                            <tr>
-                                <td>${book.bookTitle}</td>
-                                <td>${book.bookAuthor.authorName}</td>
-                                <td>${book.bookCategory.categoryName}</td>
-                                <td>$${book.bookPrice}</td>
-                                <td>${book.bookQuantity}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info view-book" data-id="${book.bookId}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    ${getActionButtons(book.bookId)}
-                                </td>
-                            </tr>
-                        `;
-                        tbody.append(row);
-                    });
-                })
-                .catch(error => {
-                    console.error('Failed to load books:', error);
-                });
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/navbar.js"></script>
+<script>
+    let currentBookId = null;
+    let allBooks = [];
+
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+
+        if (!token) {
+            window.location.href = 'signIn.html';
+            return;
         }
 
-        function getActionButtons(bookId) {
-            const role = localStorage.getItem('role');
-            let buttons = '';
-            
-            if (role === 'ADMIN' || role === 'EMPLOYEE') {
-                buttons += `
-                    <button class="btn btn-sm btn-warning edit-book" data-id="${bookId}">
+        // Show page content
+        $('body').show();
+        $('#userRoleInfo').text(`Role: ${role}`);
+
+        // Load books and dropdown data
+        loadBooks();
+        loadAuthorsDropdown();
+        loadCategoriesDropdown();
+
+        // Set up event listeners
+        $('#addBookBtn').on('click', showAddModal);
+        $('#saveBookBtn').on('click', saveBook);
+        $('#refreshBtn').on('click', loadBooks);
+        $('#searchInput').on('keyup', filterBooks);
+
+        // Initialize modals
+        const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+        // Handle modal hidden event
+        $('#bookModal').on('hidden.bs.modal', function() {
+            $('#bookForm')[0].reset();
+            $('#bookId').val('');
+            currentBookId = null;
+        });
+    });
+
+    function showAddModal() {
+        $('#modalTitle').text('Add New Book');
+        const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+        bookModal.show();
+    }
+
+    function showEditModal(bookId) {
+        const book = allBooks.find(b => b.bookId === bookId);
+        if (!book) return;
+
+        $('#modalTitle').text('Edit Book');
+        $('#bookId').val(book.bookId);
+        $('#bookTitle').val(book.bookTitle);
+        $('#bookPrice').val(book.bookPrice);
+        $('#bookQuantity').val(book.bookQuantity);
+        $('#bookImage').val(book.bookImage || '');
+        $('#bookAuthor').val(book.bookAuthor.authorId);
+        $('#bookCategory').val(book.bookCategory.categoryId);
+
+        const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+        bookModal.show();
+    }
+
+    function showDeleteModal(bookId) {
+        const book = allBooks.find(b => b.bookId === bookId);
+        if (!book) return;
+
+        $('#deleteBookTitle').text(book.bookTitle);
+        currentBookId = bookId;
+
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+
+    function saveBook() {
+        const bookId = $('#bookId').val();
+        const bookData = {
+            bookTitle: $('#bookTitle').val(),
+            bookPrice: parseFloat($('#bookPrice').val()),
+            bookQuantity: parseInt($('#bookQuantity').val()),
+            bookImage: $('#bookImage').val() || null,
+            bookAuthor: { authorId: parseInt($('#bookAuthor').val()) },
+            bookCategory: { categoryId: parseInt($('#bookCategory').val()) }
+        };
+
+        if (!bookData.bookTitle || !bookData.bookPrice || !bookData.bookQuantity ||
+            !bookData.bookAuthor.authorId || !bookData.bookCategory.categoryId) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        const url = bookId ? `/api/v1/books/${bookId}` : '/api/v1/books/save';
+        const method = bookId ? 'PUT' : 'POST';
+
+        makeApiCall(url, method, bookData)
+            .then(newBook => {
+                alert(`Book ${bookId ? 'updated' : 'added'} successfully!`);
+                $('#bookModal').modal('hide');
+                loadBooks();
+            })
+            .catch(error => {
+                alert(`Failed to ${bookId ? 'update' : 'add'} book: ` + error);
+            });
+    }
+
+    function deleteBook() {
+        if (!currentBookId) return;
+
+        makeApiCall(`/api/v1/books/${currentBookId}`, 'DELETE')
+            .then(() => {
+                alert('Book deleted successfully!');
+                $('#deleteModal').modal('hide');
+                loadBooks();
+            })
+            .catch(error => {
+                alert('Failed to delete book: ' + error);
+            });
+    }
+
+    function loadBooks() {
+        $('#loadingAlert').show();
+        $('#noBooksAlert').hide();
+
+        makeApiCall('/api/v1/books/getAllBooks', 'GET')
+            .then(books => {
+                allBooks = books;
+                displayBooks(books);
+                $('#loadingAlert').hide();
+            })
+            .catch(error => {
+                console.error('Failed to load books:', error);
+                $('#loadingAlert').hide();
+                $('#noBooksAlert').show();
+            });
+    }
+
+    function displayBooks(books) {
+        const tbody = $('#booksTable tbody');
+        tbody.empty();
+
+        if (books.length === 0) {
+            $('#noBooksAlert').show();
+            return;
+        }
+
+        books.forEach(book => {
+            const status = book.bookQuantity > 0 ?
+                `<span class="badge bg-success">In Stock</span>` :
+                `<span class="badge bg-danger">Out of Stock</span>`;
+
+            const row = `
+                    <tr>
+                        <td>${book.bookTitle}</td>
+                        <td>${book.bookAuthor.authorName}</td>
+                        <td>${book.bookCategory.categoryName}</td>
+                        <td>$${book.bookPrice.toFixed(2)}</td>
+                        <td>${book.bookQuantity}</td>
+                        <td>${status}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-info view-book" data-id="${book.bookId}" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${getActionButtons(book.bookId)}
+                        </td>
+                    </tr>
+                `;
+            tbody.append(row);
+        });
+
+        // Add event listeners to action buttons
+        $('.edit-book').on('click', function() {
+            showEditModal($(this).data('id'));
+        });
+
+        $('.delete-book').on('click', function() {
+            showDeleteModal($(this).data('id'));
+        });
+
+        $('.view-book').on('click', function() {
+            viewBook($(this).data('id'));
+        });
+    }
+
+    function getActionButtons(bookId) {
+        const role = localStorage.getItem('role');
+        let buttons = '';
+
+        if (role === 'ADMIN' || role === 'EMPLOYEE') {
+            buttons += `
+                    <button class="btn btn-sm btn-warning edit-book" data-id="${bookId}" title="Edit">
                         <i class="fas fa-edit"></i>
                     </button>
                 `;
-            }
-            
-            if (role === 'ADMIN') {
-                buttons += `
-                    <button class="btn btn-sm btn-danger delete-book" data-id="${bookId}">
+        }
+
+        if (role === 'ADMIN') {
+            buttons += `
+                    <button class="btn btn-sm btn-danger delete-book" data-id="${bookId}" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 `;
-            }
-            
-            return buttons;
         }
 
-        function loadAuthorsDropdown() {
-            makeApiCall('/api/v1/authors/getAllAuth', 'GET')
-                .then(authors => {
-                    const dropdown = $('#bookAuthor');
-                    dropdown.empty();
-                    dropdown.append('<option value="">Select Author</option>');
-                    
-                    authors.forEach(author => {
-                        dropdown.append(`<option value="${author.authorId}">${author.authorName}</option>`);
-                    });
-                })
-                .catch(error => {
-                    console.error('Failed to load authors:', error);
+        return buttons;
+    }
+
+    function viewBook(bookId) {
+        const book = allBooks.find(b => b.bookId === bookId);
+        if (!book) return;
+
+        alert(`Book Details:\n
+Title: ${book.bookTitle}
+Author: ${book.bookAuthor.authorName}
+Category: ${book.bookCategory.categoryName}
+Price: $${book.bookPrice}
+Quantity: ${book.bookQuantity}
+Status: ${book.bookQuantity > 0 ? 'In Stock' : 'Out of Stock'}`);
+    }
+
+    function loadAuthorsDropdown() {
+        makeApiCall('/api/v1/authors/getAllAuth', 'GET')
+            .then(authors => {
+                const dropdown = $('#bookAuthor');
+                dropdown.empty();
+                dropdown.append('<option value="">Select Author</option>');
+
+                authors.forEach(author => {
+                    dropdown.append(`<option value="${author.authorId}">${author.authorName}</option>`);
                 });
+            })
+            .catch(error => {
+                console.error('Failed to load authors:', error);
+            });
+    }
+
+    function loadCategoriesDropdown() {
+        makeApiCall('/api/v1/categories/getAllCat', 'GET')
+            .then(categories => {
+                const dropdown = $('#bookCategory');
+                dropdown.empty();
+                dropdown.append('<option value="">Select Category</option>');
+
+                categories.forEach(category => {
+                    dropdown.append(`<option value="${category.categoryId}">${category.categoryName}</option>`);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load categories:', error);
+            });
+    }
+
+    function filterBooks() {
+        const searchTerm = $('#searchInput').val().toLowerCase();
+        if (!searchTerm) {
+            displayBooks(allBooks);
+            return;
         }
 
-        function loadCategoriesDropdown() {
-            makeApiCall('/api/v1/categories/getAllCat', 'GET')
-                .then(categories => {
-                    const dropdown = $('#bookCategory');
-                    dropdown.empty();
-                    dropdown.append('<option value="">Select Category</option>');
-                    
-                    categories.forEach(category => {
-                        dropdown.append(`<option value="${category.categoryId}">${category.categoryName}</option>`);
-                    });
-                })
-                .catch(error => {
-                    console.error('Failed to load categories:', error);
-                });
-        }
-    </script>
+        const filteredBooks = allBooks.filter(book =>
+            book.bookTitle.toLowerCase().includes(searchTerm) ||
+            book.bookAuthor.authorName.toLowerCase().includes(searchTerm) ||
+            book.bookCategory.categoryName.toLowerCase().includes(searchTerm)
+        );
+
+        displayBooks(filteredBooks);
+    }
+
+    // Set up delete confirmation
+    $('#confirmDeleteBtn').on('click', deleteBook);
+</script>
 </body>
 </html>
