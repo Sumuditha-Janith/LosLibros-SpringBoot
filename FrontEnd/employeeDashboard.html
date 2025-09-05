@@ -46,6 +46,9 @@
         .dashboard-card:hover {
             transform: translateY(-5px);
         }
+        .admin-only { display: none; }
+        .employee-only { display: block; }
+        .user-only { display: none; }
     </style>
 </head>
 <body>
@@ -196,19 +199,17 @@
         const username = localStorage.getItem('username');
         const role = localStorage.getItem('role');
 
-        if (!token || role !== 'EMPLOYEE') {
+        if (!token) {
             window.location.href = 'signIn.html';
             return;
         }
 
-        // Show page content
+        // Show page content but don't load data yet
         $('body').show();
         $('#userInfo').text(`Welcome, ${username} (${role})`);
 
-        // Load initial data
-        loadBooks();
-        loadAuthors();
-        loadCategories();
+        // First verify user role from API, then load data
+        verifyUserRoleAndLoadData();
 
         // Logout functionality
         $('#logoutBtn').on('click', function(e) {
@@ -218,16 +219,35 @@
             localStorage.removeItem('role');
             window.location.href = 'index.html';
         });
+    });
 
-        // Fetch user info from API
-        makeApiCall('/api/user/info', 'GET')
+    function verifyUserRoleAndLoadData() {
+        // First get user info from API to verify role - FIXED ENDPOINT
+        makeApiCall('/api/v1/users/info', 'GET')
             .then(response => {
-                $('#userInfo').text(`Welcome, ${response.username} (${role})`);
+                const userRole = response.role;
+                $('#userInfo').text(`Welcome, ${response.username} (${userRole})`);
+
+                // Update localStorage with actual role from server
+                localStorage.setItem('role', userRole);
+
+                if (userRole !== 'EMPLOYEE' && userRole !== 'ADMIN') {
+                    alert('Access denied. You need employee privileges to access this dashboard.');
+                    window.location.href = 'userDashboard.html';
+                    return;
+                }
+
+                // User is confirmed EMPLOYEE or ADMIN, now load data they can access
+                loadBooks();
+                loadAuthors();
+                loadCategories();
             })
             .catch(error => {
-                console.error('Failed to fetch user info:', error);
+                console.error('Failed to verify user role:', error);
+                alert('Failed to verify user permissions. Please login again.');
+                window.location.href = 'signIn.html';
             });
-    });
+    }
 
     function loadBooks() {
         makeApiCall('/api/v1/books/getAllBooks', 'GET')
@@ -236,6 +256,7 @@
             })
             .catch(error => {
                 console.error('Failed to load books:', error);
+                $('#booksCount').text('Error');
             });
     }
 
@@ -246,6 +267,7 @@
             })
             .catch(error => {
                 console.error('Failed to load authors:', error);
+                $('#authorsCount').text('Error');
             });
     }
 
@@ -256,6 +278,7 @@
             })
             .catch(error => {
                 console.error('Failed to load categories:', error);
+                $('#categoriesCount').text('Error');
             });
     }
 </script>
