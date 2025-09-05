@@ -1,4 +1,3 @@
-// AuthService.java
 package lk.ijse.gdse71.loslibros.service;
 
 import lk.ijse.gdse71.loslibros.dto.AuthDTO;
@@ -39,11 +38,16 @@ public class AuthService {
             throw new RuntimeException("Username is already exist");
         }
 
+        // Prevent users from registering as ADMIN or EMPLOYEE
+        if (!registerDTO.getRole().equalsIgnoreCase("USER")) {
+            throw new RuntimeException("Invalid role selection");
+        }
+
         User user = User.builder()
                 .username(registerDTO.getUsername())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .email(registerDTO.getEmail())
-                .role(Role.valueOf(registerDTO.getRole().toUpperCase()))
+                .role(Role.USER) // Force USER role
                 .build();
 
         userRepository.save(user);
