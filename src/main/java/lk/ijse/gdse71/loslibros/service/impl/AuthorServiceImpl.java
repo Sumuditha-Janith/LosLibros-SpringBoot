@@ -1,4 +1,63 @@
 package lk.ijse.gdse71.loslibros.service.impl;
 
-public class AuthorServiceImpl {
+import lk.ijse.gdse71.loslibros.dto.AuthorDTO;
+import lk.ijse.gdse71.loslibros.entity.Author;
+import lk.ijse.gdse71.loslibros.repository.AuthorRepository;
+import lk.ijse.gdse71.loslibros.service.AuthorService;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class AuthorServiceImpl implements AuthorService {
+
+    @Autowired
+    private AuthorRepository authorRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    @Override
+    public AuthorDTO saveAuthor(AuthorDTO authorDTO) {
+        Author author = modelMapper.map(authorDTO, Author.class);
+        Author savedAuthor = authorRepository.save(author);
+        return modelMapper.map(savedAuthor, AuthorDTO.class);
+    }
+
+    @Override
+    public List<AuthorDTO> getAllAuthors() {
+        return authorRepository.findAll().stream()
+                .map(author -> modelMapper.map(author, AuthorDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public AuthorDTO getAuthorById(Long id) {
+        Author author = authorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Author not found with id: " + id));
+        return modelMapper.map(author, AuthorDTO.class);
+    }
+
+    @Override
+    public void deleteAuthor(Long id) {
+        if (!authorRepository.existsById(id)) {
+            throw new RuntimeException("Author not found with id: " + id);
+        }
+        authorRepository.deleteById(id);
+    }
+
+    @Override
+    public AuthorDTO updateAuthor(Long id, AuthorDTO authorDTO) {
+        Author existingAuthor = authorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Author not found with id: " + id));
+
+        existingAuthor.setAuthorName(authorDTO.getAuthorName());
+        existingAuthor.setAuthorDescription(authorDTO.getAuthorDescription());
+
+        Author updatedAuthor = authorRepository.save(existingAuthor);
+        return modelMapper.map(updatedAuthor, AuthorDTO.class);
+    }
 }
