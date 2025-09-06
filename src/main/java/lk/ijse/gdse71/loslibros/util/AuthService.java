@@ -1,4 +1,4 @@
-package lk.ijse.gdse71.loslibros.service;
+package lk.ijse.gdse71.loslibros.util;
 
 import lk.ijse.gdse71.loslibros.dto.AuthDTO;
 import lk.ijse.gdse71.loslibros.dto.AuthResponseDTO;
@@ -6,7 +6,6 @@ import lk.ijse.gdse71.loslibros.dto.RegisterDTO;
 import lk.ijse.gdse71.loslibros.entity.Role;
 import lk.ijse.gdse71.loslibros.entity.User;
 import lk.ijse.gdse71.loslibros.repository.UserRepository;
-import lk.ijse.gdse71.loslibros.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

@@ -88,9 +88,9 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="bookPrice" class="form-label">Price *</label>
+                                <label for="bookPrice" class="form-label">Price (LKR) *</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">LKR</span>
                                     <input type="number" step="0.01" min="0" class="form-control" id="bookPrice" required>
                                 </div>
                             </div>
@@ -162,8 +162,8 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/api.js"></script>
-<script src="js/navbar.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/navbar.js"></script>
 <script>
     let currentBookId = null;
     let allBooks = [];
@@ -324,7 +324,7 @@
                         <td>${book.bookTitle}</td>
                         <td>${book.bookAuthor.authorName}</td>
                         <td>${book.bookCategory.categoryName}</td>
-                        <td>$${book.bookPrice.toFixed(2)}</td>
+                        <td>LKR ${book.bookPrice.toFixed(2)}</td>
                         <td>${book.bookQuantity}</td>
                         <td>${status}</td>
                         <td class="action-buttons">
@@ -383,7 +383,7 @@
 Title: ${book.bookTitle}
 Author: ${book.bookAuthor.authorName}
 Category: ${book.bookCategory.categoryName}
-Price: $${book.bookPrice}
+Price: LKR ${book.bookPrice}
 Quantity: ${book.bookQuantity}
 Status: ${book.bookQuantity > 0 ? 'In Stock' : 'Out of Stock'}`);
     }

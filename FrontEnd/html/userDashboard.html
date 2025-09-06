@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - LosLibros</title>
+    <title>User Dashboard - LosLibros</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -46,9 +46,9 @@
         .dashboard-card:hover {
             transform: translateY(-5px);
         }
-        .admin-only { display: block; }
+        .admin-only { display: none; }
         .employee-only { display: none; }
-        .user-only { display: none; }
+        .user-only { display: block; }
     </style>
 </head>
 <body>
@@ -56,34 +56,29 @@
 <div class="sidebar">
     <div class="text-center mb-4">
         <h4><i class="fas fa-book me-2"></i>LosLibros</h4>
-        <p class="text-muted">Admin Dashboard</p>
+        <p class="text-muted">User Dashboard</p>
     </div>
     <ul class="nav flex-column">
         <li class="nav-item">
-            <a class="nav-link active" href="adminDashboard.html">
+            <a class="nav-link active" href="userDashboard.html">
                 <i class="fas fa-tachometer-alt me-2"></i>Dashboard
             </a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="books.html">
-                <i class="fas fa-book me-2"></i>Books
+                <i class="fas fa-book me-2"></i>Browse Books
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="authors.html">
-                <i class="fas fa-user-tie me-2"></i>Authors
+            <a class="nav-link" href="#">
+                <i class="fas fa-bookmark me-2"></i>My Favorites
             </a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" href="categories.html">
-                <i class="fas fa-tags me-2"></i>Categories
-            </a>
-        </li>
-        <li class="nav-item admin-only">
-            <a class="nav-link" href="users.html">
-                <i class="fas fa-users me-2"></i>Users
-            </a>
-        </li>
+<!--        <li class="nav-item">-->
+<!--            <a class="nav-link" href="#">-->
+<!--                <i class="fas fa-history me-2"></i>Reading History-->
+<!--            </a>-->
+<!--        </li>-->
         <li class="nav-item">
             <a class="nav-link" href="#" id="logoutBtn">
                 <i class="fas fa-sign-out-alt me-2"></i>Logout
@@ -95,19 +90,19 @@
 <!-- Main Content -->
 <div class="main-content">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Admin Dashboard</h2>
+        <h2>User Dashboard</h2>
         <div>
-            <span class="badge bg-primary" id="userInfo">Welcome, Admin</span>
+            <span class="badge bg-primary" id="userInfo">Welcome, User</span>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-md-3 mb-4">
+        <div class="col-md-4 mb-4">
             <div class="card dashboard-card bg-primary text-white">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
-                            <h5 class="card-title">Books</h5>
+                            <h5 class="card-title">Books Available</h5>
                             <h2 class="card-text" id="booksCount">0</h2>
                         </div>
                         <div>
@@ -117,46 +112,31 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-4">
+        <div class="col-md-4 mb-4">
             <div class="card dashboard-card bg-success text-white">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
-                            <h5 class="card-title">Authors</h5>
-                            <h2 class="card-text" id="authorsCount">0</h2>
+                            <h5 class="card-title">Favorites</h5>
+                            <h2 class="card-text">0</h2>
                         </div>
                         <div>
-                            <i class="fas fa-user-tie fa-3x opacity-50"></i>
+                            <i class="fas fa-heart fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3 mb-4">
+        <div class="col-md-4 mb-4">
             <div class="card dashboard-card bg-warning text-white">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
-                            <h5 class="card-title">Categories</h5>
-                            <h2 class="card-text" id="categoriesCount">0</h2>
+                            <h5 class="card-title">Wishlist</h5>
+                            <h2 class="card-text">0</h2>
                         </div>
                         <div>
-                            <i class="fas fa-tags fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-4 admin-only">
-            <div class="card dashboard-card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h5 class="card-title">Users</h5>
-                            <h2 class="card-text" id="usersCount">0</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-users fa-3x opacity-50"></i>
+                            <i class="fas fa-bookmark fa-3x opacity-50"></i>
                         </div>
                     </div>
                 </div>
@@ -173,17 +153,14 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         <a href="books.html" class="btn btn-primary">
-                            <i class="fas fa-book me-2"></i>Manage Books
+                            <i class="fas fa-book me-2"></i>Browse Books
                         </a>
-                        <a href="authors.html" class="btn btn-success">
-                            <i class="fas fa-user-tie me-2"></i>Manage Authors
-                        </a>
-                        <a href="categories.html" class="btn btn-warning">
-                            <i class="fas fa-tags me-2"></i>Manage Categories
-                        </a>
-                        <a href="users.html" class="btn btn-info admin-only">
-                            <i class="fas fa-users me-2"></i>Manage Users
-                        </a>
+                        <button class="btn btn-success">
+                            <i class="fas fa-heart me-2"></i>View Favorites
+                        </button>
+                        <button class="btn btn-warning">
+                            <i class="fas fa-bookmark me-2"></i>View Wishlist
+                        </button>
                     </div>
                 </div>
             </div>
@@ -191,25 +168,12 @@
         <div class="col-md-6 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5>System Status</h5>
+                    <h5>Recently Added</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <span class="fw-bold">Database:</span>
-                        <span class="badge bg-success">Online</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="fw-bold">Authentication:</span>
-                        <span class="badge bg-success">Active</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="fw-bold">API Status:</span>
-                        <span class="badge bg-success">Running</span>
-                    </div>
-                    <div class="mb-3">
-                        <span class="fw-bold">Storage:</span>
-                        <span class="badge bg-warning">75% Used</span>
-                    </div>
+                    <ul class="list-group list-group-flush" id="recentBooks">
+                        <li class="list-group-item">Loading recent books...</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -218,7 +182,7 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/api.js"></script>
+<script src="../js/api.js"></script>
 <script>
     $(document).ready(function() {
         // Check authentication
@@ -244,12 +208,12 @@
             localStorage.removeItem('token');
             localStorage.removeItem('username');
             localStorage.removeItem('role');
-            window.location.href = 'index.html';
+            window.location.href = '../index.html';
         });
     });
 
     function verifyUserRoleAndLoadData() {
-        // First get user info from API to verify role
+        // First get user info from API to verify role - FIXED ENDPOINT
         makeApiCall('/api/v1/users/info', 'GET')
             .then(response => {
                 const userRole = response.role;
@@ -258,17 +222,8 @@
                 // Update localStorage with actual role from server
                 localStorage.setItem('role', userRole);
 
-                if (userRole !== 'ADMIN') {
-                    alert('Access denied. You need admin privileges to access this dashboard.');
-                    window.location.href = userRole === 'EMPLOYEE' ? 'employeeDashboard.html' : 'userDashboard.html';
-                    return;
-                }
-
-                // User is confirmed ADMIN, now load all data
+                // User is confirmed, now load data they can access
                 loadBooks();
-                loadAuthors();
-                loadCategories();
-                loadUsersCount();
             })
             .catch(error => {
                 console.error('Failed to verify user role:', error);
@@ -281,6 +236,7 @@
         makeApiCall('/api/v1/books/getAllBooks', 'GET')
             .then(books => {
                 $('#booksCount').text(books.length);
+                displayRecentBooks(books);
             })
             .catch(error => {
                 console.error('Failed to load books:', error);
@@ -288,37 +244,23 @@
             });
     }
 
-    function loadAuthors() {
-        makeApiCall('/api/v1/authors/getAllAuth', 'GET')
-            .then(authors => {
-                $('#authorsCount').text(authors.length);
-            })
-            .catch(error => {
-                console.error('Failed to load authors:', error);
-                $('#authorsCount').text('Error');
-            });
-    }
+    function displayRecentBooks(books) {
+        const recentBooksList = $('#recentBooks');
+        recentBooksList.empty();
 
-    function loadCategories() {
-        makeApiCall('/api/v1/categories/getAllCat', 'GET')
-            .then(categories => {
-                $('#categoriesCount').text(categories.length);
-            })
-            .catch(error => {
-                console.error('Failed to load categories:', error);
-                $('#categoriesCount').text('Error');
-            });
-    }
+        if (books.length === 0) {
+            recentBooksList.append('<li class="list-group-item">No books available</li>');
+            return;
+        }
 
-    function loadUsersCount() {
-        makeApiCall('/api/v1/users', 'GET')
-            .then(users => {
-                $('#usersCount').text(users.length);
-            })
-            .catch(error => {
-                console.error('Failed to load users count:', error);
-                $('#usersCount').text('Error');
-            });
+        // Show up to 4 recent books
+        books.slice(0, 4).forEach(book => {
+            recentBooksList.append(`
+                <li class="list-group-item">
+                    <strong>${book.bookTitle}</strong> by ${book.bookAuthor.authorName}
+                </li>
+            `);
+        });
     }
 </script>
 </body>

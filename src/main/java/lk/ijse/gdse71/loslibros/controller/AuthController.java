@@ -4,7 +4,7 @@ import lk.ijse.gdse71.loslibros.dto.ApiResponse;
 import lk.ijse.gdse71.loslibros.dto.AuthDTO;
 import lk.ijse.gdse71.loslibros.dto.AuthResponseDTO;
 import lk.ijse.gdse71.loslibros.dto.RegisterDTO;
-import lk.ijse.gdse71.loslibros.service.AuthService;
+import lk.ijse.gdse71.loslibros.util.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
