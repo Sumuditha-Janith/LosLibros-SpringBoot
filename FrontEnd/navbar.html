@@ -1,4 +1,3 @@
-<!-- navbar.html - Reusable navigation bar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#">
@@ -13,13 +12,16 @@
                     <a class="nav-link" href="#" id="dashboardLink">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" id="booksLink">Books</a>
+                    <a class="nav-link" href="books.html" id="booksLink">Books</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" id="authorsLink">Authors</a>
+                    <a class="nav-link" href="authors.html" id="authorsLink">Authors</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" id="categoriesLink">Categories</a>
+                    <a class="nav-link" href="categories.html" id="categoriesLink">Categories</a>
+                </li>
+                <li class="nav-item admin-only">
+                    <a class="nav-link" href="users.html" id="usersLink">Users</a>
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto">
@@ -27,9 +29,45 @@
                     <span class="navbar-text me-3" id="userInfoNav">Welcome, User</span>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" id="logoutBtnNav">Logout</a>
+                    <a class="nav-link" href="#" id="logoutBtnNav">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
+<script>
+    // Inline script to handle dashboard link immediately after navbar loads
+    $(document).ready(function() {
+        const role = localStorage.getItem('role');
+        const dashboardLink = $('#dashboardLink');
+
+        if (role) {
+            switch(role) {
+                case 'ADMIN':
+                    dashboardLink.attr('href', 'adminDashboard.html');
+                    dashboardLink.text('Admin Dashboard');
+                    break;
+                case 'EMPLOYEE':
+                    dashboardLink.attr('href', 'employeeDashboard.html');
+                    dashboardLink.text('Employee Dashboard');
+                    break;
+                case 'USER':
+                    dashboardLink.attr('href', 'userDashboard.html');
+                    dashboardLink.text('User Dashboard');
+                    break;
+            }
+        }
+
+        // Handle logout
+        $('#logoutBtnNav').on('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'index.html';
+        });
+    });
+</script>
