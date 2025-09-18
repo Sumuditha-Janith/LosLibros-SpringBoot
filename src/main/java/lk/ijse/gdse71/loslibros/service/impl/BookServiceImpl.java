@@ -24,13 +24,13 @@ public class BookServiceImpl implements BookService {
     public BookDTO saveBook(BookDTO bookDTO) {
         Book book = modelMapper.map(bookDTO, Book.class);
         Book savedBook = bookRepository.save(book);
-        return modelMapper.map(savedBook, BookDTO.class);
+        return convertToDTO(savedBook);
     }
 
     @Override
     public List<BookDTO> getAllBooks() {
         return bookRepository.findAll().stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -38,7 +38,7 @@ public class BookServiceImpl implements BookService {
     public BookDTO getBookById(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
-        return modelMapper.map(book, BookDTO.class);
+        return convertToDTO(book);
     }
 
     @Override
@@ -60,20 +60,34 @@ public class BookServiceImpl implements BookService {
         existingBook.setBookImage(bookDTO.getBookImage());
 
         Book updatedBook = bookRepository.save(existingBook);
-        return modelMapper.map(updatedBook, BookDTO.class);
+        return convertToDTO(updatedBook);
     }
 
     @Override
     public List<BookDTO> getBooksByAuthor(Long authorId) {
         return bookRepository.findByBookAuthor_AuthorId(authorId).stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<BookDTO> getBooksByCategory(Long categoryId) {
         return bookRepository.findByBookCategory_CategoryId(categoryId).stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    private BookDTO convertToDTO(Book book) {
+        BookDTO dto = modelMapper.map(book, BookDTO.class);
+
+        if (book.getBookAuthor() != null) {
+            dto.getBookAuthor().setAuthorName(book.getBookAuthor().getAuthorName());
+        }
+
+        if (book.getBookCategory() != null) {
+            dto.getBookCategory().setCategoryName(book.getBookCategory().getCategoryName());
+        }
+
+        return dto;
     }
 }
