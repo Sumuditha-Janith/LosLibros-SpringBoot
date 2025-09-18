@@ -8,7 +8,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityNotFoundException; // Using a more specific exception
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,7 +35,12 @@ public class AuthorServiceImpl implements AuthorService {
     @Transactional(readOnly = true)
     public List<AuthorDTO> getAllAuthors() {
         return authorRepository.findAll().stream()
-                .map(author -> modelMapper.map(author, AuthorDTO.class))
+                .map(author -> {
+                    AuthorDTO dto = modelMapper.map(author, AuthorDTO.class);
+                    // Set book count
+                    dto.setBookCount(author.getBooks() != null ? author.getBooks().size() : 0);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -44,7 +49,10 @@ public class AuthorServiceImpl implements AuthorService {
     public AuthorDTO getAuthorById(Long id) {
         Author author = authorRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Author not found with id: " + id));
-        return modelMapper.map(author, AuthorDTO.class);
+        AuthorDTO dto = modelMapper.map(author, AuthorDTO.class);
+        // Set book count
+        dto.setBookCount(author.getBooks() != null ? author.getBooks().size() : 0);
+        return dto;
     }
 
     @Override
@@ -64,6 +72,9 @@ public class AuthorServiceImpl implements AuthorService {
         existingAuthor.setAuthorDescription(authorDTO.getAuthorDescription());
 
         Author updatedAuthor = authorRepository.save(existingAuthor);
-        return modelMapper.map(updatedAuthor, AuthorDTO.class);
+        AuthorDTO dto = modelMapper.map(updatedAuthor, AuthorDTO.class);
+        // Set book count
+        dto.setBookCount(updatedAuthor.getBooks() != null ? updatedAuthor.getBooks().size() : 0);
+        return dto;
     }
 }

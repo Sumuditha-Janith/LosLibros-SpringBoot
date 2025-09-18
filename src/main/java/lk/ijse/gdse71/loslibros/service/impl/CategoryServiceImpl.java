@@ -24,13 +24,21 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDTO saveCategory(CategoryDTO categoryDTO) {
         Category category = modelMapper.map(categoryDTO, Category.class);
         Category savedCategory = categoryRepository.save(category);
-        return modelMapper.map(savedCategory, CategoryDTO.class);
+        CategoryDTO dto = modelMapper.map(savedCategory, CategoryDTO.class);
+        // Set book count
+        dto.setBookCount(savedCategory.getBooks() != null ? savedCategory.getBooks().size() : 0);
+        return dto;
     }
 
     @Override
     public List<CategoryDTO> getAllCategories() {
         return categoryRepository.findAll().stream()
-                .map(category -> modelMapper.map(category, CategoryDTO.class))
+                .map(category -> {
+                    CategoryDTO dto = modelMapper.map(category, CategoryDTO.class);
+                    // Set book count
+                    dto.setBookCount(category.getBooks() != null ? category.getBooks().size() : 0);
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -38,7 +46,10 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDTO getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
-        return modelMapper.map(category, CategoryDTO.class);
+        CategoryDTO dto = modelMapper.map(category, CategoryDTO.class);
+        // Set book count
+        dto.setBookCount(category.getBooks() != null ? category.getBooks().size() : 0);
+        return dto;
     }
 
     @Override
@@ -57,6 +68,9 @@ public class CategoryServiceImpl implements CategoryService {
         existingCategory.setCategoryName(categoryDTO.getCategoryName());
 
         Category updatedCategory = categoryRepository.save(existingCategory);
-        return modelMapper.map(updatedCategory, CategoryDTO.class);
+        CategoryDTO dto = modelMapper.map(updatedCategory, CategoryDTO.class);
+        // Set book count
+        dto.setBookCount(updatedCategory.getBooks() != null ? updatedCategory.getBooks().size() : 0);
+        return dto;
     }
 }

@@ -254,7 +254,7 @@
             const row = `
                     <tr>
                         <td>${category.categoryName}</td>
-                        <td>${category.books ? category.books.length : 0}</td>
+                        <td>${category.bookCount || 0}</td>
                         <td class="action-buttons">
                             ${getActionButtons(category.categoryId)}
                         </td>

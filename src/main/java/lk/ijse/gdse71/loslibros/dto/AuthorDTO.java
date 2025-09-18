@@ -11,4 +11,5 @@ public class AuthorDTO {
     private Long authorId;
     private String authorName;
     private String authorDescription;
+    private Integer bookCount;
 }
