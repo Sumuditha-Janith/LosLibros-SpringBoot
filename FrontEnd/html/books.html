@@ -9,33 +9,7 @@
     <style>
         body {
             background-color: #f8f9fa;
-        }
-        .sidebar {
-            background-color: #343a40;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            padding-top: 20px;
-        }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 10px 20px;
-            margin: 5px 0;
-        }
-        .sidebar .nav-link:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: white;
-            background-color: #0d6efd;
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
+            padding-top: 76px; /* Account for fixed navbar */
         }
         .book-image {
             max-width: 100px;
@@ -54,6 +28,7 @@
             text-align: center;
             cursor: pointer;
             margin-bottom: 15px;
+            position: relative;
         }
         .upload-area:hover {
             border-color: #0d6efd;
@@ -63,52 +38,25 @@
             margin-bottom: 15px;
             display: none;
         }
+        #imageUpload {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="text-center mb-4">
-        <h4><i class="fas fa-book me-2"></i>LosLibros</h4>
-        <p class="text-muted">Admin Dashboard</p>
-    </div>
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" href="adminDashboard.html">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link active" href="books.html">
-                <i class="fas fa-book me-2"></i>Books
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="authors.html">
-                <i class="fas fa-user-tie me-2"></i>Authors
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="categories.html">
-                <i class="fas fa-tags me-2"></i>Categories
-            </a>
-        </li>
-        <li class="nav-item admin-only">
-            <a class="nav-link" href="users.html">
-                <i class="fas fa-users me-2"></i>Users
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#" id="logoutBtn">
-                <i class="fas fa-sign-out-alt me-2"></i>Logout
-            </a>
-        </li>
-    </ul>
-</div>
+<!-- Navbar Container -->
+<div id="navbar-container"></div>
 
 <!-- Main Content -->
-<div class="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
         <h2>Manage Books</h2>
         <div>
             <span class="badge bg-primary" id="userInfo">Welcome, Admin</span>
@@ -151,7 +99,7 @@
                             <div class="upload-area" id="uploadArea">
                                 <i class="fas fa-cloud-upload-alt fa-3x mb-2"></i>
                                 <p>Click or drag image to upload</p>
-                                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                                <input type="file" id="imageUpload" accept="image/*">
                             </div>
                             <div class="progress" id="uploadProgress">
                                 <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -216,6 +164,7 @@
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../js/api.js"></script>
+<script src="../js/navbar.js"></script>
 <script>
     const IMGBB_API_KEY = '40afd4d2258cabdd429760a26e3e3658';
     let books = [];
@@ -247,15 +196,6 @@
         loadAuthors();
         loadCategories();
         loadBooks();
-
-        // Logout functionality
-        $('#logoutBtn').on('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            localStorage.removeItem('role');
-            window.location.href = '../index.html';
-        });
     });
 
     function verifyUserRole() {
@@ -286,11 +226,7 @@
             resetForm();
         });
 
-        // File upload handling
-        $('#uploadArea').on('click', function() {
-            $('#imageUpload').click();
-        });
-
+        // File upload handling - fixed to work with click
         $('#imageUpload').on('change', function(e) {
             if (e.target.files && e.target.files[0]) {
                 uploadImage(e.target.files[0]);
@@ -300,18 +236,21 @@
         // Drag and drop for image upload
         $('#uploadArea').on('dragover', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             $(this).css('border-color', '#0d6efd');
             $(this).css('background-color', '#f8f9fa');
         });
 
         $('#uploadArea').on('dragleave', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             $(this).css('border-color', '#ccc');
             $(this).css('background-color', '');
         });
 
         $('#uploadArea').on('drop', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             $(this).css('border-color', '#ccc');
             $(this).css('background-color', '');
 
