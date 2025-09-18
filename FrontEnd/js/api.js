@@ -24,6 +24,12 @@ function handleApiError(xhr) {
     } else if (xhr.status === 403) {
         alert('Access denied. You do not have permission to perform this action.');
         return true;
+    } else if (xhr.status === 404) {
+        alert('Requested resource not found.');
+        return true;
+    } else if (xhr.status >= 500) {
+        alert('Server error. Please try again later.');
+        return true;
     }
     return false;
 }
