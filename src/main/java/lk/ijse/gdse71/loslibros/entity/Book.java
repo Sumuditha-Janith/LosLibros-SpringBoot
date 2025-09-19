@@ -18,6 +18,9 @@ public class Book {
     @Column(nullable = false)
     private String bookTitle;
 
+    @Column(columnDefinition = "TEXT")
+    private String bookDescription;
+
     @Column(nullable = false)
     private Double bookPrice;
 

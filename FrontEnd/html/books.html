@@ -8,65 +8,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
+            display: none;
             background-color: #f8f9fa;
-            padding-top: 76px;
         }
-        .book-image {
-            max-width: 100px;
-            max-height: 150px;
-            object-fit: cover;
-        }
-        .book-image-preview {
-            max-width: 200px;
-            max-height: 300px;
-            object-fit: cover;
-            display: none;
-        }
-        .upload-area {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 15px;
-            position: relative;
-        }
-        .upload-area:hover {
-            border-color: #0d6efd;
-        }
-        .progress {
-            height: 20px;
-            margin-bottom: 15px;
-            display: none;
-        }
-        #imageUpload {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .admin-only { display: none; }
         .action-buttons {
             white-space: nowrap;
         }
         .table-responsive {
             overflow-x: auto;
         }
+        .book-image {
+            width: 50px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-<!-- Navbar Container -->
 <div id="navbar-container"></div>
 
-<!-- Main Content -->
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+<div class="container" style="margin-top: 80px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Manage Books</h2>
-        <div>
-            <span class="badge bg-primary" id="userInfo">Welcome, Admin</span>
-        </div>
+        <span class="badge bg-primary" id="userRoleInfo"></span>
     </div>
 
     <div class="d-flex justify-content-between mb-3">
@@ -91,6 +56,7 @@
             <tr>
                 <th>Image</th>
                 <th>Title</th>
+                <th>Description</th>
                 <th>Price</th>
                 <th>Quantity</th>
                 <th>Author</th>
@@ -98,7 +64,7 @@
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody id="bookTableBody">
+            <tbody>
             <!-- Books will be populated here -->
             </tbody>
         </table>
@@ -121,42 +87,43 @@
                 <form id="bookForm">
                     <input type="hidden" id="bookId">
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="bookTitle" class="form-label">Book Title *</label>
-                                <input type="text" class="form-control" id="bookTitle" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="bookPrice" class="form-label">Price *</label>
-                                <input type="number" class="form-control" id="bookPrice" step="0.01" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="bookQuantity" class="form-label">Quantity *</label>
-                                <input type="number" class="form-control" id="bookQuantity" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="bookAuthor" class="form-label">Author *</label>
-                                <select class="form-control" id="bookAuthor" required></select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="bookCategory" class="form-label">Category *</label>
-                                <select class="form-control" id="bookCategory" required></select>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bookTitle" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="bookTitle" required>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Book Image</label>
-                                <div class="upload-area" id="uploadArea">
-                                    <i class="fas fa-cloud-upload-alt fa-3x mb-2"></i>
-                                    <p>Click or drag image to upload</p>
-                                    <input type="file" id="imageUpload" accept="image/*">
-                                </div>
-                                <div class="progress" id="uploadProgress">
-                                    <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                                <img id="imagePreview" class="book-image-preview img-thumbnail">
-                                <input type="hidden" id="bookImage">
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bookPrice" class="form-label">Price *</label>
+                            <input type="number" class="form-control" id="bookPrice" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bookDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="bookDescription" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bookQuantity" class="form-label">Quantity *</label>
+                            <input type="number" class="form-control" id="bookQuantity" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bookImage" class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="bookImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bookAuthor" class="form-label">Author *</label>
+                            <select class="form-select" id="bookAuthor" required>
+                                <option value="">Select Author</option>
+                                <!-- Authors will be populated here -->
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bookCategory" class="form-label">Category *</label>
+                            <select class="form-select" id="bookCategory" required>
+                                <option value="">Select Category</option>
+                                <!-- Categories will be populated here -->
+                            </select>
                         </div>
                     </div>
                 </form>
@@ -194,16 +161,13 @@
 <script src="../js/api.js"></script>
 <script src="../js/navbar.js"></script>
 <script>
-    const IMGBB_API_KEY = '40afd4d2258cabdd429760a26e3e3658';
-    let books = [];
-    let authors = [];
-    let categories = [];
     let currentBookId = null;
+    let allBooks = [];
+    let allAuthors = [];
+    let allCategories = [];
 
     $(document).ready(function() {
-        // Check authentication
         const token = localStorage.getItem('token');
-        const username = localStorage.getItem('username');
         const role = localStorage.getItem('role');
 
         if (!token) {
@@ -212,97 +176,68 @@
         }
 
         // Show page content
-        $('#userInfo').text(`Welcome, ${username} (${role})`);
+        $('body').show();
+        $('#userRoleInfo').text(`Role: ${role}`);
 
-        // Verify user role
-        verifyUserRole();
+        // Hide add button for USER role
+        if (role === 'USER') {
+            $('#addBookBtn').hide();
+        }
 
-        // Setup event listeners
-        setupEventListeners();
-
-        // Load initial data
-        loadAuthors();
-        loadCategories();
-        loadBooks();
-    });
-
-    function verifyUserRole() {
-        makeApiCall('/api/v1/users/info', 'GET')
-            .then(response => {
-                const userRole = response.role;
-                if (userRole !== 'ADMIN' && userRole !== 'EMPLOYEE') {
-                    alert('Access denied. You need admin or employee privileges to manage books.');
-                    window.location.href = userRole === 'USER' ? 'userDashboard.html' : 'signIn.html';
-                }
-            })
-            .catch(error => {
-                console.error('Failed to verify user role:', error);
-                alert('Failed to verify user permissions. Please login again.');
-                window.location.href = 'signIn.html';
-            });
-    }
-
-    function setupEventListeners() {
-        // Add book button
-        $('#addBookBtn').on('click', showAddModal);
-
-        // Save book button
-        $('#saveBookBtn').on('click', saveBook);
-
-        // Refresh button
-        $('#refreshBtn').on('click', function() {
+        // Load books data and dependencies
+        loadAuthorsAndCategories().then(() => {
             loadBooks();
-            loadAuthors();
-            loadCategories();
         });
 
-        // Search input
+        // Set up event listeners
+        $('#addBookBtn').on('click', showAddModal);
+        $('#saveBookBtn').on('click', saveBook);
+        $('#refreshBtn').on('click', loadBooks);
         $('#searchInput').on('keyup', filterBooks);
 
-        // File upload handling
-        $('#imageUpload').on('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                uploadImage(e.target.files[0]);
-            }
-        });
-
-        // Drag and drop for image upload
-        $('#uploadArea').on('dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).css('border-color', '#0d6efd');
-            $(this).css('background-color', '#f8f9fa');
-        });
-
-        $('#uploadArea').on('dragleave', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).css('border-color', '#ccc');
-            $(this).css('background-color', '');
-        });
-
-        $('#uploadArea').on('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            $(this).css('border-color', '#ccc');
-            $(this).css('background-color', '');
-
-            if (e.originalEvent.dataTransfer.files && e.originalEvent.dataTransfer.files[0]) {
-                uploadImage(e.originalEvent.dataTransfer.files[0]);
-            }
-        });
+        // Initialize modals
+        const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
         // Handle modal hidden event
         $('#bookModal').on('hidden.bs.modal', function() {
             $('#bookForm')[0].reset();
             $('#bookId').val('');
-            $('#imagePreview').hide();
-            $('#bookImage').val('');
             currentBookId = null;
         });
+    });
 
-        // Set up delete confirmation
-        $('#confirmDeleteBtn').on('click', deleteBook);
+    function loadAuthorsAndCategories() {
+        return Promise.all([
+            makeApiCall('/api/v1/authors/getAllAuth', 'GET')
+                .then(authors => {
+                    allAuthors = authors;
+                    populateAuthorDropdown();
+                }),
+            makeApiCall('/api/v1/categories/getAllCat', 'GET')
+                .then(categories => {
+                    allCategories = categories;
+                    populateCategoryDropdown();
+                })
+        ]);
+    }
+
+    function populateAuthorDropdown() {
+        const dropdown = $('#bookAuthor');
+        dropdown.empty();
+        dropdown.append('<option value="">Select Author</option>');
+        allAuthors.forEach(author => {
+            dropdown.append(`<option value="${author.authorId}">${author.authorName}</option>`);
+        });
+    }
+
+    function populateCategoryDropdown() {
+        const dropdown = $('#bookCategory');
+        dropdown.empty();
+        dropdown.append('<option value="">Select Category</option>');
+        allCategories.forEach(category => {
+            dropdown.append(`<option value="${category.categoryId}">${category.categoryName}</option>`);
+        });
     }
 
     function showAddModal() {
@@ -312,30 +247,25 @@
     }
 
     function showEditModal(bookId) {
-        const book = books.find(b => b.bookId === bookId);
+        const book = allBooks.find(b => b.bookId === bookId);
         if (!book) return;
 
         $('#modalTitle').text('Edit Book');
         $('#bookId').val(book.bookId);
         $('#bookTitle').val(book.bookTitle);
+        $('#bookDescription').val(book.bookDescription || '');
         $('#bookPrice').val(book.bookPrice);
         $('#bookQuantity').val(book.bookQuantity);
-        $('#bookAuthor').val(book.bookAuthor.authorId);
-        $('#bookCategory').val(book.bookCategory.categoryId);
-
-        if (book.bookImage) {
-            $('#bookImage').val(book.bookImage);
-            $('#imagePreview').attr('src', book.bookImage).show();
-        }
-
-        currentBookId = bookId;
+        $('#bookImage').val(book.bookImage || '');
+        $('#bookAuthor').val(book.bookAuthor?.authorId || '');
+        $('#bookCategory').val(book.bookCategory?.categoryId || '');
 
         const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
         bookModal.show();
     }
 
     function showDeleteModal(bookId) {
-        const book = books.find(b => b.bookId === bookId);
+        const book = allBooks.find(b => b.bookId === bookId);
         if (!book) return;
 
         $('#deleteBookTitle').text(book.bookTitle);
@@ -345,62 +275,54 @@
         deleteModal.show();
     }
 
-    function uploadImage(file) {
-        // Check if file is an image
-        if (!file.type.match('image.*')) {
-            alert('Please select an image file');
+    function saveBook() {
+        const bookId = $('#bookId').val();
+        const bookData = {
+            bookTitle: $('#bookTitle').val(),
+            bookDescription: $('#bookDescription').val() || '',
+            bookPrice: parseFloat($('#bookPrice').val()),
+            bookQuantity: parseInt($('#bookQuantity').val()),
+            bookImage: $('#bookImage').val() || '',
+            bookAuthor: {
+                authorId: parseInt($('#bookAuthor').val())
+            },
+            bookCategory: {
+                categoryId: parseInt($('#bookCategory').val())
+            }
+        };
+
+        if (!bookData.bookTitle || !bookData.bookPrice || !bookData.bookQuantity ||
+            !bookData.bookAuthor.authorId || !bookData.bookCategory.categoryId) {
+            alert('Please fill in all required fields');
             return;
         }
 
-        // Show preview
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            $('#imagePreview').attr('src', e.target.result).show();
-        };
-        reader.readAsDataURL(file);
+        const url = bookId ? `/api/v1/books/${bookId}` : '/api/v1/books/save';
+        const method = bookId ? 'PUT' : 'POST';
 
-        // Upload to ImgBB
-        const formData = new FormData();
-        formData.append('image', file);
-        formData.append('key', IMGBB_API_KEY);
+        makeApiCall(url, method, bookData)
+            .then(newBook => {
+                alert(`Book ${bookId ? 'updated' : 'added'} successfully!`);
+                $('#bookModal').modal('hide');
+                loadBooks();
+            })
+            .catch(error => {
+                alert(`Failed to ${bookId ? 'update' : 'add'} book: ` + error);
+            });
+    }
 
-        $('#uploadProgress').show();
-        $('#uploadArea').hide();
+    function deleteBook() {
+        if (!currentBookId) return;
 
-        $.ajax({
-            url: 'https://api.imgbb.com/1/upload',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            xhr: function() {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener('progress', function(e) {
-                    if (e.lengthComputable) {
-                        const percentComplete = (e.loaded / e.total) * 100;
-                        $('#uploadProgress .progress-bar').css('width', percentComplete + '%');
-                    }
-                }, false);
-                return xhr;
-            },
-            success: function(response) {
-                if (response.success) {
-                    $('#bookImage').val(response.data.url);
-                    $('#uploadProgress').hide();
-                    $('#uploadArea').show();
-                    alert('Image uploaded successfully!');
-                } else {
-                    alert('Failed to upload image: ' + response.error.message);
-                    $('#uploadProgress').hide();
-                    $('#uploadArea').show();
-                }
-            },
-            error: function() {
-                alert('Failed to upload image. Please try again.');
-                $('#uploadProgress').hide();
-                $('#uploadArea').show();
-            }
-        });
+        makeApiCall(`/api/v1/books/${currentBookId}`, 'DELETE')
+            .then(() => {
+                alert('Book deleted successfully!');
+                $('#deleteModal').modal('hide');
+                loadBooks();
+            })
+            .catch(error => {
+                alert('Failed to delete book: ' + error);
+            });
     }
 
     function loadBooks() {
@@ -408,9 +330,9 @@
         $('#noBooksAlert').hide();
 
         makeApiCall('/api/v1/books/getAllBooks', 'GET')
-            .then(data => {
-                books = data;
-                renderBooksTable();
+            .then(books => {
+                allBooks = books;
+                displayBooks(books);
                 $('#loadingAlert').hide();
             })
             .catch(error => {
@@ -420,37 +342,9 @@
             });
     }
 
-    function loadAuthors() {
-        makeApiCall('/api/v1/authors/getAllAuth', 'GET')
-            .then(data => {
-                authors = data;
-                $('#bookAuthor').empty();
-                authors.forEach(author => {
-                    $('#bookAuthor').append(`<option value="${author.authorId}">${author.authorName}</option>`);
-                });
-            })
-            .catch(error => {
-                console.error('Failed to load authors:', error);
-            });
-    }
-
-    function loadCategories() {
-        makeApiCall('/api/v1/categories/getAllCat', 'GET')
-            .then(data => {
-                categories = data;
-                $('#bookCategory').empty();
-                categories.forEach(category => {
-                    $('#bookCategory').append(`<option value="${category.categoryId}">${category.categoryName}</option>`);
-                });
-            })
-            .catch(error => {
-                console.error('Failed to load categories:', error);
-            });
-    }
-
-    function renderBooksTable() {
-        const tableBody = $('#bookTableBody');
-        tableBody.empty();
+    function displayBooks(books) {
+        const tbody = $('#booksTable tbody');
+        tbody.empty();
 
         if (books.length === 0) {
             $('#noBooksAlert').show();
@@ -458,28 +352,31 @@
         }
 
         books.forEach(book => {
-            const author = authors.find(a => a.authorId === book.bookAuthor.authorId) || {};
-            const category = categories.find(c => c.categoryId === book.bookCategory.categoryId) || {};
+            const description = book.bookDescription ?
+                (book.bookDescription.length > 50 ?
+                    book.bookDescription.substring(0, 50) + '...' :
+                    book.bookDescription) :
+                'No description';
 
             const row = `
                 <tr>
                     <td>
                         ${book.bookImage ?
                 `<img src="${book.bookImage}" class="book-image" alt="${book.bookTitle}">` :
-                '<i class="fas fa-image text-muted"></i>'
-            }
+                '<i class="fas fa-book fa-2x text-muted"></i>'}
                     </td>
                     <td>${book.bookTitle}</td>
+                    <td>${description}</td>
                     <td>$${book.bookPrice.toFixed(2)}</td>
                     <td>${book.bookQuantity}</td>
-                    <td>${author.authorName || 'N/A'}</td>
-                    <td>${category.categoryName || 'N/A'}</td>
+                    <td>${book.bookAuthor?.authorName || 'Unknown'}</td>
+                    <td>${book.bookCategory?.categoryName || 'Unknown'}</td>
                     <td class="action-buttons">
                         ${getActionButtons(book.bookId)}
                     </td>
                 </tr>
             `;
-            tableBody.append(row);
+            tbody.append(row);
         });
 
         // Add event listeners to action buttons
@@ -515,116 +412,25 @@
         return buttons;
     }
 
-    function saveBook() {
-        const bookId = $('#bookId').val();
-        const bookData = {
-            bookTitle: $('#bookTitle').val(),
-            bookPrice: parseFloat($('#bookPrice').val()),
-            bookQuantity: parseInt($('#bookQuantity').val()),
-            bookImage: $('#bookImage').val(),
-            bookAuthor: {
-                authorId: parseInt($('#bookAuthor').val())
-            },
-            bookCategory: {
-                categoryId: parseInt($('#bookCategory').val())
-            }
-        };
-
-        // Validate required fields
-        if (!bookData.bookTitle || !bookData.bookPrice || !bookData.bookQuantity ||
-            !bookData.bookAuthor.authorId || !bookData.bookCategory.categoryId) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
-        const url = bookId ? `/api/v1/books/${bookId}` : '/api/v1/books/save';
-        const method = bookId ? 'PUT' : 'POST';
-
-        makeApiCall(url, method, bookData)
-            .then(() => {
-                alert(`Book ${bookId ? 'updated' : 'added'} successfully!`);
-                $('#bookModal').modal('hide');
-                loadBooks();
-            })
-            .catch(error => {
-                console.error('Failed to save book:', error);
-                alert('Failed to save book: ' + error);
-            });
-    }
-
-    function deleteBook() {
-        if (!currentBookId) return;
-
-        makeApiCall(`/api/v1/books/${currentBookId}`, 'DELETE')
-            .then(() => {
-                alert('Book deleted successfully!');
-                $('#deleteModal').modal('hide');
-                loadBooks();
-            })
-            .catch(error => {
-                console.error('Failed to delete book:', error);
-                alert('Failed to delete book: ' + error);
-                $('#deleteModal').modal('hide');
-            });
-    }
-
     function filterBooks() {
         const searchTerm = $('#searchInput').val().toLowerCase();
         if (!searchTerm) {
-            renderBooksTable();
+            displayBooks(allBooks);
             return;
         }
 
-        const filteredBooks = books.filter(function(book) {
-            return book.bookTitle.toLowerCase().includes(searchTerm) ||
-                (book.bookAuthor && book.bookAuthor.authorName &&
-                    book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
-                (book.bookCategory && book.bookCategory.categoryName &&
-                    book.bookCategory.categoryName.toLowerCase().includes(searchTerm));
-        });
+        const filteredBooks = allBooks.filter(book =>
+            book.bookTitle.toLowerCase().includes(searchTerm) ||
+            (book.bookDescription && book.bookDescription.toLowerCase().includes(searchTerm)) ||
+            (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
+            (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+        );
 
-        const tableBody = $('#bookTableBody');
-        tableBody.empty();
-
-        if (filteredBooks.length === 0) {
-            tableBody.append('<tr><td colspan="7" class="text-center">No matching books found</td></tr>');
-            return;
-        }
-
-        filteredBooks.forEach(book => {
-            const author = authors.find(a => a.authorId === book.bookAuthor.authorId) || {};
-            const category = categories.find(c => c.categoryId === book.bookCategory.categoryId) || {};
-
-            const row = `
-                <tr>
-                    <td>
-                        ${book.bookImage ?
-                `<img src="${book.bookImage}" class="book-image" alt="${book.bookTitle}">` :
-                '<i class="fas fa-image text-muted"></i>'
-            }
-                    </td>
-                    <td>${book.bookTitle}</td>
-                    <td>$${book.bookPrice.toFixed(2)}</td>
-                    <td>${book.bookQuantity}</td>
-                    <td>${author.authorName || 'N/A'}</td>
-                    <td>${category.categoryName || 'N/A'}</td>
-                    <td class="action-buttons">
-                        ${getActionButtons(book.bookId)}
-                    </td>
-                </tr>
-            `;
-            tableBody.append(row);
-        });
-
-        // Re-add event listeners to action buttons
-        $('.edit-book').on('click', function() {
-            showEditModal($(this).data('id'));
-        });
-
-        $('.delete-book').on('click', function() {
-            showDeleteModal($(this).data('id'));
-        });
+        displayBooks(filteredBooks);
     }
+
+    // Set up delete confirmation
+    $('#confirmDeleteBtn').on('click', deleteBook);
 </script>
 </body>
 </html>

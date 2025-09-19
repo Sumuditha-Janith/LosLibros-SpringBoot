@@ -55,6 +55,7 @@ public class BookServiceImpl implements BookService {
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
 
         existingBook.setBookTitle(bookDTO.getBookTitle());
+        existingBook.setBookDescription(bookDTO.getBookDescription());
         existingBook.setBookPrice(bookDTO.getBookPrice());
         existingBook.setBookQuantity(bookDTO.getBookQuantity());
         existingBook.setBookImage(bookDTO.getBookImage());
