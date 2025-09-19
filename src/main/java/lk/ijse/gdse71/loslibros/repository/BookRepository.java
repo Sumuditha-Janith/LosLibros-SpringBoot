@@ -10,4 +10,5 @@ import java.util.List;
 public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByBookAuthor_AuthorId(Long authorId);
     List<Book> findByBookCategory_CategoryId(Long categoryId);
+    List<Book> findByBookPublisher_PublisherId(Long publisherId);
 }

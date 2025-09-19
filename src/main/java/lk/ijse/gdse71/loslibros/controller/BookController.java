@@ -65,4 +65,11 @@ public class BookController {
         List<BookDTO> books = bookService.getBooksByCategory(categoryId);
         return ResponseEntity.ok(books);
     }
+
+    @GetMapping("/publisher/{publisherId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
+    public ResponseEntity<List<BookDTO>> getBooksByPublisher(@PathVariable Long publisherId) {
+        List<BookDTO> books = bookService.getBooksByPublisher(publisherId);
+        return ResponseEntity.ok(books);
+    }
 }

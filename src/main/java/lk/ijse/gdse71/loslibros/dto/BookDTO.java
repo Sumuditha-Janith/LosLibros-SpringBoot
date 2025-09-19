@@ -16,4 +16,5 @@ public class BookDTO {
     private String bookImage;
     private AuthorDTO bookAuthor;
     private CategoryDTO bookCategory;
+    private PublisherDTO bookPublisher;
 }

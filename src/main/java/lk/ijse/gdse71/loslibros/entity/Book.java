@@ -36,4 +36,8 @@ public class Book {
     @ManyToOne
     @JoinColumn(name = "bookCategory", nullable = false)
     private Category bookCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "bookPublisher")
+    private Publisher bookPublisher;
 }

@@ -78,6 +78,13 @@ public class BookServiceImpl implements BookService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<BookDTO> getBooksByPublisher(Long publisherId) {
+        return bookRepository.findByBookPublisher_PublisherId(publisherId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     private BookDTO convertToDTO(Book book) {
         BookDTO dto = modelMapper.map(book, BookDTO.class);
 
@@ -87,6 +94,10 @@ public class BookServiceImpl implements BookService {
 
         if (book.getBookCategory() != null) {
             dto.getBookCategory().setCategoryName(book.getBookCategory().getCategoryName());
+        }
+
+        if (book.getBookPublisher() != null) {
+            dto.getBookPublisher().setPublisherName(book.getBookPublisher().getPublisherName());
         }
 
         return dto;
