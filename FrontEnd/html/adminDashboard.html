@@ -185,7 +185,7 @@
             </div>
         </div>
         <div class="col-md-3 mb-4 admin-only">
-            <div class="card dashboard-card bg-info text-white">
+            <div class="card dashboard-card bg-secondary text-white">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
@@ -218,7 +218,10 @@
                         <a href="categories.html" class="btn btn-warning">
                             <i class="fas fa-tags me-2"></i>Manage Categories
                         </a>
-                        <a href="users.html" class="btn btn-info admin-only">
+                        <a href="publishers.html" class="btn btn-info">
+                            <i class="fas fa-building me-2"></i>Manage Publishers
+                        </a>
+                        <a href="users.html" class="btn btn-secondary admin-only">
                             <i class="fas fa-users me-2"></i>Manage Users
                         </a>
                     </div>
@@ -324,6 +327,7 @@
                 loadBooks();
                 loadAuthors();
                 loadCategories();
+                loadPublishers();
                 loadUsersCount();
             })
             .catch(error => {
@@ -366,6 +370,17 @@
             });
     }
 
+    function loadPublishers() {
+        makeApiCall('/api/v1/publishers/getAllPub', 'GET')
+            .then(publishers => {
+                $('#publishersCount').text(publishers.length);
+            })
+            .catch(error => {
+                console.error('Failed to load publishers:', error);
+                $('#publishersCount').text('Error');
+            });
+    }
+
     function loadUsersCount() {
         makeApiCall('/api/v1/users', 'GET')
             .then(users => {
@@ -374,17 +389,6 @@
             .catch(error => {
                 console.error('Failed to load users count:', error);
                 $('#usersCount').text('Error');
-            });
-    }
-
-    function loadPublishersCount() {
-        makeApiCall('/api/v1/publishers/getAllPub', 'GET')
-            .then(publishers => {
-                $('#publishersCount').text(publishers.length);
-            })
-            .catch(error => {
-                console.error('Failed to load publishers count:', error);
-                $('#publishersCount').text('Error');
             });
     }
 </script>
