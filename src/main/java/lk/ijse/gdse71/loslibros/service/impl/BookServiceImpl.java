@@ -1,6 +1,8 @@
 package lk.ijse.gdse71.loslibros.service.impl;
 
+import jakarta.transaction.Transactional;
 import lk.ijse.gdse71.loslibros.dto.BookDTO;
+import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
 import lk.ijse.gdse71.loslibros.entity.Book;
 import lk.ijse.gdse71.loslibros.repository.BookRepository;
 import lk.ijse.gdse71.loslibros.service.BookService;
@@ -85,18 +87,32 @@ public class BookServiceImpl implements BookService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void processPurchase(List<PurchaseRequest> purchaseRequests) {
+        for (PurchaseRequest req : purchaseRequests) {
+            Book book = bookRepository.findById(req.getBookId())
+                    .orElseThrow(() -> new RuntimeException("Book not found: " + req.getBookId()));
+
+            if (book.getBookQuantity() < req.getQuantity()) {
+                throw new RuntimeException("Not enough stock for book: " + book.getBookTitle());
+            }
+
+            book.setBookQuantity(book.getBookQuantity() - req.getQuantity());
+            bookRepository.save(book);
+        }
+    }
+
     private BookDTO convertToDTO(Book book) {
         BookDTO dto = modelMapper.map(book, BookDTO.class);
 
-        if (book.getBookAuthor() != null) {
+        if (book.getBookAuthor() != null && dto.getBookAuthor() != null) {
             dto.getBookAuthor().setAuthorName(book.getBookAuthor().getAuthorName());
         }
-
-        if (book.getBookCategory() != null) {
+        if (book.getBookCategory() != null && dto.getBookCategory() != null) {
             dto.getBookCategory().setCategoryName(book.getBookCategory().getCategoryName());
         }
-
-        if (book.getBookPublisher() != null) {
+        if (book.getBookPublisher() != null && dto.getBookPublisher() != null) {
             dto.getBookPublisher().setPublisherName(book.getBookPublisher().getPublisherName());
         }
 

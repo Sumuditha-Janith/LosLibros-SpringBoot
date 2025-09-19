@@ -1,6 +1,7 @@
 package lk.ijse.gdse71.loslibros.controller;
 
 import lk.ijse.gdse71.loslibros.dto.BookDTO;
+import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
 import lk.ijse.gdse71.loslibros.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,24 +26,21 @@ public class BookController {
     }
 
     @GetMapping("getAllBooks")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','USER')")
     public ResponseEntity<List<BookDTO>> getAllBooks() {
-        List<BookDTO> books = bookService.getAllBooks();
-        return ResponseEntity.ok(books);
+        return ResponseEntity.ok(bookService.getAllBooks());
     }
 
     @GetMapping("get/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','USER')")
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
-        BookDTO book = bookService.getBookById(id);
-        return ResponseEntity.ok(book);
+        return ResponseEntity.ok(bookService.getBookById(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('EMPLOYEE')")
     public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO bookDTO) {
-        BookDTO updatedBook = bookService.updateBook(id, bookDTO);
-        return ResponseEntity.ok(updatedBook);
+        return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
     }
 
     @DeleteMapping("/{id}")
@@ -52,24 +50,10 @@ public class BookController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/author/{authorId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
-    public ResponseEntity<List<BookDTO>> getBooksByAuthor(@PathVariable Long authorId) {
-        List<BookDTO> books = bookService.getBooksByAuthor(authorId);
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/category/{categoryId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
-    public ResponseEntity<List<BookDTO>> getBooksByCategory(@PathVariable Long categoryId) {
-        List<BookDTO> books = bookService.getBooksByCategory(categoryId);
-        return ResponseEntity.ok(books);
-    }
-
-    @GetMapping("/publisher/{publisherId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE', 'USER')")
-    public ResponseEntity<List<BookDTO>> getBooksByPublisher(@PathVariable Long publisherId) {
-        List<BookDTO> books = bookService.getBooksByPublisher(publisherId);
-        return ResponseEntity.ok(books);
+    @PostMapping("/purchase")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE','USER')")
+    public ResponseEntity<String> purchaseBooks(@RequestBody List<PurchaseRequest> purchaseRequests) {
+        bookService.processPurchase(purchaseRequests);
+        return ResponseEntity.ok("Purchase successful. Stock updated.");
     }
 }
