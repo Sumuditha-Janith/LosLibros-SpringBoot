@@ -82,6 +82,7 @@
                 <th>Quantity</th>
                 <th>Author</th>
                 <th>Category</th>
+                <th>Publisher</th>
                 <th>Actions</th>
             </tr>
             </thead>
@@ -141,18 +142,25 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="bookAuthor" class="form-label">Author *</label>
                             <select class="form-select" id="bookAuthor" required>
                                 <option value="">Select Author</option>
                                 <!-- Authors will be populated here -->
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="bookCategory" class="form-label">Category *</label>
                             <select class="form-select" id="bookCategory" required>
                                 <option value="">Select Category</option>
                                 <!-- Categories will be populated here -->
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bookPublisher" class="form-label">Publisher</label>
+                            <select class="form-select" id="bookPublisher">
+                                <option value="">Select Publisher (Optional)</option>
+                                <!-- Publishers will be populated here -->
                             </select>
                         </div>
                     </div>
@@ -223,6 +231,7 @@
     let allBooks = [];
     let allAuthors = [];
     let allCategories = [];
+    let allPublishers = [];
     let imageUploadModalInstance = null;
     const IMGBB_API_KEY = '40afd4d2258cabdd429760a26e3e3658';
 
@@ -248,7 +257,7 @@
         imageUploadModalInstance = new bootstrap.Modal(document.getElementById('imageUploadModal'));
 
         // Load books data and dependencies
-        loadAuthorsAndCategories().then(() => {
+        loadAuthorsCategoriesAndPublishers().then(() => {
             loadBooks();
         });
 
@@ -275,7 +284,7 @@
         });
     });
 
-    function loadAuthorsAndCategories() {
+    function loadAuthorsCategoriesAndPublishers() {
         return Promise.all([
             makeApiCall('/api/v1/authors/getAllAuth', 'GET')
                 .then(authors => {
@@ -286,6 +295,11 @@
                 .then(categories => {
                     allCategories = categories;
                     populateCategoryDropdown();
+                }),
+            makeApiCall('/api/v1/publishers/getAllPub', 'GET')
+                .then(publishers => {
+                    allPublishers = publishers;
+                    populatePublisherDropdown();
                 })
         ]);
     }
@@ -308,6 +322,15 @@
         });
     }
 
+    function populatePublisherDropdown() {
+        const dropdown = $('#bookPublisher');
+        dropdown.empty();
+        dropdown.append('<option value="">Select Publisher (Optional)</option>');
+        allPublishers.forEach(publisher => {
+            dropdown.append(`<option value="${publisher.publisherId}">${publisher.publisherName}</option>`);
+        });
+    }
+
     function showAddModal() {
         $('#modalTitle').text('Add New Book');
         const bookModal = new bootstrap.Modal(document.getElementById('bookModal'));
@@ -327,6 +350,7 @@
         $('#bookImage').val(book.bookImage || '');
         $('#bookAuthor').val(book.bookAuthor?.authorId || '');
         $('#bookCategory').val(book.bookCategory?.categoryId || '');
+        $('#bookPublisher').val(book.bookPublisher?.publisherId || '');
 
         // Show image preview if available
         if (book.bookImage) {
@@ -453,6 +477,14 @@
             }
         };
 
+        // Add publisher only if selected
+        const publisherId = $('#bookPublisher').val();
+        if (publisherId) {
+            bookData.bookPublisher = {
+                publisherId: parseInt(publisherId)
+            };
+        }
+
         if (!bookData.bookTitle || !bookData.bookPrice || !bookData.bookQuantity ||
             !bookData.bookAuthor.authorId || !bookData.bookCategory.categoryId) {
             alert('Please fill in all required fields');
@@ -543,6 +575,7 @@
                     <td>${book.bookQuantity}</td>
                     <td>${book.bookAuthor?.authorName || 'Unknown'}</td>
                     <td>${book.bookCategory?.categoryName || 'Unknown'}</td>
+                    <td>${book.bookPublisher?.publisherName || 'None'}</td>
                     <td class="action-buttons">
                         ${getActionButtons(book.bookId)}
                     </td>
@@ -595,7 +628,8 @@
             book.bookTitle.toLowerCase().includes(searchTerm) ||
             (book.bookDescription && book.bookDescription.toLowerCase().includes(searchTerm)) ||
             (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
-            (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+            (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm)) ||
+            (book.bookPublisher?.publisherName && book.bookPublisher.publisherName.toLowerCase().includes(searchTerm))
         );
 
         displayBooks(filteredBooks);

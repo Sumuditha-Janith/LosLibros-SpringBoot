@@ -77,6 +77,9 @@ function setActiveLink() {
         case 'categories.html':
             $('#categoriesLink').addClass('active');
             break;
+        case 'publishers.html':
+            $('#publishersLink').addClass('active');
+            break;
         case 'users.html':
             $('#usersLink').addClass('active');
             break;
@@ -91,7 +94,7 @@ function updateNavigationBasedOnRole(role) {
 
     // Hide management elements for regular users
     if (role === 'USER') {
-        $('#authorsLink, #categoriesLink').hide();
+        $('#authorsLink, #categoriesLink, #publishersLink').hide();
 
         // Change text for user role
         $('#booksLink').text('Browse Books');
@@ -100,5 +103,6 @@ function updateNavigationBasedOnRole(role) {
         $('#booksLink').text('Manage Books');
         $('#authorsLink').text('Manage Authors');
         $('#categoriesLink').text('Manage Categories');
+        $('#publishersLink').text('Manage Publishers');
     }
 }
