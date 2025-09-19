@@ -54,6 +54,13 @@
         .in-stock {
             color: #198754;
         }
+        .book-category {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .sort-dropdown {
+            min-width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -73,7 +80,7 @@
         </div>
     </div>
 
-    <!-- Filter Section -->
+    <!-- Filter and Sort Section -->
     <div class="filter-section">
         <div class="row">
             <div class="col-md-4 mb-3">
@@ -94,8 +101,23 @@
                     <!-- Authors will be populated here -->
                 </select>
             </div>
-            <div class="col-md-2 mb-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary w-100" id="clearFiltersBtn">Clear Filters</button>
+            <div class="col-md-2 mb-3">
+                <label for="sortSelect" class="form-label">Sort By</label>
+                <select class="form-select sort-dropdown" id="sortSelect">
+                    <option value="title">Book Name (A-Z)</option>
+                    <option value="title_desc">Book Name (Z-A)</option>
+                    <option value="author">Author (A-Z)</option>
+                    <option value="author_desc">Author (Z-A)</option>
+                    <option value="category">Category (A-Z)</option>
+                    <option value="category_desc">Category (Z-A)</option>
+                    <option value="price_low">Price (Low to High)</option>
+                    <option value="price_high">Price (High to Low)</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-outline-secondary" id="clearFiltersBtn">
+                    <i class="fas fa-times me-1"></i> Clear All Filters
+                </button>
             </div>
         </div>
     </div>
@@ -143,6 +165,10 @@
                         <div class="mb-3">
                             <span class="fw-bold">Publisher: </span>
                             <span id="detailsPublisher"></span>
+                        </div>
+                        <div class="mb-3 stock-info">
+                            <span class="fw-bold">Available Quantity: </span>
+                            <span id="detailsQuantity"></span>
                         </div>
                         <div class="mb-3 stock-info">
                             <span class="fw-bold">Availability: </span>
@@ -330,6 +356,7 @@
         $('#searchInput').on('keyup', filterBooks);
         $('#categoryFilter').on('change', filterBooks);
         $('#authorFilter').on('change', filterBooks);
+        $('#sortSelect').on('change', filterBooks);
         $('#clearFiltersBtn').on('click', clearFilters);
         $('#loadMoreBtn').on('click', loadMoreBooks);
         $('#viewCartBtn').on('click', showCart);
@@ -416,6 +443,7 @@
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title">${book.bookTitle}</h5>
                             <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
+                            <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
                             <div class="mt-auto">
                                 <p class="price-tag">$${book.bookPrice.toFixed(2)}</p>
                                 <p class="stock-info ${stockStatus.class}">
@@ -475,6 +503,7 @@
         $('#detailsDescription').text(book.bookDescription || 'No description available.');
         $('#detailsCategory').text(book.bookCategory?.categoryName || 'Unknown');
         $('#detailsPublisher').text(book.bookPublisher?.publisherName || 'Unknown');
+        $('#detailsQuantity').text(book.bookQuantity);
         $('#detailsStock').html(`<span class="${stockStatus.class}"><i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}</span>`);
 
         // Set up add to cart button in modal
@@ -502,6 +531,7 @@
         const searchTerm = $('#searchInput').val().toLowerCase();
         const categoryFilter = $('#categoryFilter').val();
         const authorFilter = $('#authorFilter').val();
+        const sortOption = $('#sortSelect').val();
 
         let filteredBooks = allBooks;
 
@@ -528,6 +558,9 @@
             );
         }
 
+        // Apply sorting
+        filteredBooks = sortBooks(filteredBooks, sortOption);
+
         // Reset displayed books count
         displayedBooks = 12;
 
@@ -550,10 +583,50 @@
         }
     }
 
+    function sortBooks(books, sortOption) {
+        switch(sortOption) {
+            case 'title':
+                return books.sort((a, b) => a.bookTitle.localeCompare(b.bookTitle));
+            case 'title_desc':
+                return books.sort((a, b) => b.bookTitle.localeCompare(a.bookTitle));
+            case 'author':
+                return books.sort((a, b) => {
+                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                    return authorA.localeCompare(authorB);
+                });
+            case 'author_desc':
+                return books.sort((a, b) => {
+                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                    return authorB.localeCompare(authorA);
+                });
+            case 'category':
+                return books.sort((a, b) => {
+                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                    return categoryA.localeCompare(categoryB);
+                });
+            case 'category_desc':
+                return books.sort((a, b) => {
+                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                    return categoryB.localeCompare(categoryA);
+                });
+            case 'price_low':
+                return books.sort((a, b) => a.bookPrice - b.bookPrice);
+            case 'price_high':
+                return books.sort((a, b) => b.bookPrice - a.bookPrice);
+            default:
+                return books;
+        }
+    }
+
     function clearFilters() {
         $('#searchInput').val('');
         $('#categoryFilter').val('');
         $('#authorFilter').val('');
+        $('#sortSelect').val('title');
         filterBooks();
     }
 
@@ -561,6 +634,7 @@
         const searchTerm = $('#searchInput').val().toLowerCase();
         const categoryFilter = $('#categoryFilter').val();
         const authorFilter = $('#authorFilter').val();
+        const sortOption = $('#sortSelect').val();
 
         let filteredBooks = allBooks;
 
@@ -583,6 +657,9 @@
                 book.bookAuthor?.authorName === authorFilter
             );
         }
+
+        // Apply sorting
+        filteredBooks = sortBooks(filteredBooks, sortOption);
 
         displayedBooks += 12;
         displayBooks(filteredBooks.slice(0, displayedBooks));
