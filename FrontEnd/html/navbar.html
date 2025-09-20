@@ -27,10 +27,15 @@
                     <a class="nav-link" href="users.html" id="usersLink">Users</a>
                 </li>
             </ul>
+
             <ul class="navbar-nav ms-auto">
-<!--                <li class="nav-item">-->
-<!--                    <span class="navbar-text me-3" id="userInfoNav">Welcome, User</span>-->
-<!--                </li>-->
+
+                <li class="nav-item">
+                    <a class="nav-link" href="orderHistory.html" id="ordersLink">
+                        <i class="fas fa-receipt me-1"></i>My Orders
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="#" id="logoutBtnNav">
                         <i class="fas fa-sign-out-alt me-1"></i>Logout
@@ -64,7 +69,7 @@
             }
         }
 
-        // Handle logout
+        // Handle logout (this path is used when navbar is directly opened from a subfolder)
         $('#logoutBtnNav').on('click', function(e) {
             e.preventDefault();
             localStorage.removeItem('token');

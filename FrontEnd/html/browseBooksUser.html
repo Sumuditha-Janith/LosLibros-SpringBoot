@@ -862,46 +862,54 @@
     }
 
     function processPayment() {
-        // Simple validation for credit card
         if ($('#creditCard').is(':checked')) {
             const cardNumber = $('#cardNumber').val();
             const expiryDate = $('#expiryDate').val();
             const cvv = $('#cvv').val();
             const cardholderName = $('#cardholderName').val();
-
             if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
                 alert('Please fill in all credit card details');
                 return;
             }
-
-            // Simple regex validation for card number (just checking if it's 16 digits)
             if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
                 alert('Please enter a valid card number');
                 return;
             }
         }
 
-        // Simulate payment processing
         $('#confirmPaymentBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
-        setTimeout(() => {
-            // Generate random order ID
-            const orderId = '#' + Math.floor(100000 + Math.random() * 900000);
-            $('#orderId').text(orderId);
+        fetch("http://localhost:8080/api/v1/orders/place", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            },
+            body: JSON.stringify(cart.map(item => ({
+                bookId: item.bookId,
+                quantity: item.quantity
+            })))
+        }).then(res => {
+            if (!res.ok) throw new Error("Order failed");
+            return res.json();
+        }).then(order => {
+            console.log("Order placed:", order);
 
-            // Clear cart
+            $('#orderId').text("#" + order.id);
+
             cart = [];
             localStorage.removeItem(cartKey);
             updateCartCount();
 
-            // Show success modal
             $('#checkoutModal').modal('hide');
             $('#paymentSuccessModal').modal('show');
-
-            // Reset checkout button
+        }).catch(err => {
+            alert("Error: " + err.message);
+        }).finally(() => {
             $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
-        }, 2000);
+        });
     }
+
 </script>
 </body>
 </html>

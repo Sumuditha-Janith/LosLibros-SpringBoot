@@ -1,11 +1,12 @@
 $(document).ready(function() {
-    // Load navbar dynamically
+    // Load navbar dynamically into pages that include #navbar-container
     $('#navbar-container').load('navbar.html', function() {
         const token = localStorage.getItem('token');
         const username = localStorage.getItem('username');
         const role = localStorage.getItem('role');
 
         if (token && username && role) {
+            // Update user display in navbar
             $('#userInfoNav').text(`Welcome, ${username} (${role})`);
 
             // Set up dashboard link based on user role
@@ -27,6 +28,7 @@ $(document).ready(function() {
             });
 
         } else {
+            // if not authenticated, redirect to sign in page
             window.location.href = 'signIn.html';
         }
     });
@@ -83,6 +85,9 @@ function setActiveLink() {
         case 'users.html':
             $('#usersLink').addClass('active');
             break;
+        case 'orderHistory.html':
+            $('#ordersLink').addClass('active');
+            break;
     }
 }
 
@@ -90,6 +95,8 @@ function updateNavigationBasedOnRole(role) {
     // Hide admin-only elements for non-admin users
     if (role !== 'ADMIN') {
         $('.admin-only').hide();
+    } else {
+        $('.admin-only').show();
     }
 
     // Hide management elements for regular users
