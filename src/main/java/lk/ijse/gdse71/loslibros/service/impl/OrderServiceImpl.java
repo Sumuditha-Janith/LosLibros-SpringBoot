@@ -3,11 +3,10 @@ package lk.ijse.gdse71.loslibros.service.impl;
 import jakarta.transaction.Transactional;
 import lk.ijse.gdse71.loslibros.dto.OrderDTO;
 import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
-import lk.ijse.gdse71.loslibros.entity.Book;
-import lk.ijse.gdse71.loslibros.entity.Order;
-import lk.ijse.gdse71.loslibros.entity.OrderItem;
+import lk.ijse.gdse71.loslibros.entity.*;
 import lk.ijse.gdse71.loslibros.repository.BookRepository;
 import lk.ijse.gdse71.loslibros.repository.OrderRepository;
+import lk.ijse.gdse71.loslibros.repository.UserRepository;
 import lk.ijse.gdse71.loslibros.service.OrderService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -21,14 +20,16 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final BookRepository bookRepository;
+    private final UserRepository userRepository;
     private final ModelMapper mapper;
 
-    public OrderServiceImpl(OrderRepository orderRepository, BookRepository bookRepository, ModelMapper mapper) {
+    public OrderServiceImpl(OrderRepository orderRepository, BookRepository bookRepository,
+                            UserRepository userRepository, ModelMapper mapper) {
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
+        this.userRepository = userRepository;
         this.mapper = mapper;
     }
-
 
     @Override
     @Transactional
@@ -36,6 +37,10 @@ public class OrderServiceImpl implements OrderService {
         if (requests == null || requests.isEmpty()) {
             throw new RuntimeException("No items provided for order.");
         }
+
+        // Get user details
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         List<OrderItem> items = requests.stream().map(req -> {
             if (req == null || req.getBookId() == null || req.getQuantity() <= 0) {
@@ -67,15 +72,17 @@ public class OrderServiceImpl implements OrderService {
 
         Order order = Order.builder()
                 .username(username)
+                .userEmail(user.getEmail())
+                .userAddress(user.getAddress())
                 .totalAmount(total)
                 .orderDate(LocalDateTime.now())
+                .orderStatus(OrderStatus.PENDING)
                 .items(items)
                 .build();
 
         items.forEach(i -> i.setOrder(order));
 
         Order saved = orderRepository.save(order);
-
         return mapper.map(saved, OrderDTO.class);
     }
 
@@ -88,7 +95,24 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDTO> getAllOrders() {
-        return orderRepository.findAll().stream()
+        return orderRepository.findAllOrderByDateDesc().stream()
+                .map(order -> mapper.map(order, OrderDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderDTO updateOrderStatus(Long orderId, OrderStatus status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+
+        order.setOrderStatus(status);
+        Order updatedOrder = orderRepository.save(order);
+        return mapper.map(updatedOrder, OrderDTO.class);
+    }
+
+    @Override
+    public List<OrderDTO> getOrdersByStatus(OrderStatus status) {
+        return orderRepository.findByStatus(status).stream()
                 .map(order -> mapper.map(order, OrderDTO.class))
                 .collect(Collectors.toList());
     }

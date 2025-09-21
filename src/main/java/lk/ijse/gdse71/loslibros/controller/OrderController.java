@@ -2,6 +2,7 @@ package lk.ijse.gdse71.loslibros.controller;
 
 import lk.ijse.gdse71.loslibros.dto.OrderDTO;
 import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
+import lk.ijse.gdse71.loslibros.entity.OrderStatus;
 import lk.ijse.gdse71.loslibros.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
@@ -35,8 +37,21 @@ public class OrderController {
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ResponseEntity<List<OrderDTO>> allOrders() {
         return ResponseEntity.ok(orderService.getAllOrders());
+    }
+
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<List<OrderDTO>> getOrdersByStatus(@PathVariable OrderStatus status) {
+        return ResponseEntity.ok(orderService.getOrdersByStatus(status));
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable Long id,
+                                                      @RequestParam OrderStatus status) {
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
     }
 }
