@@ -41,7 +41,12 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
         existingUser.setUsername(userDTO.getUsername());
+        existingUser.setAddress(userDTO.getAddress());
         existingUser.setEmail(userDTO.getEmail());
+
+        if (userDTO.getRole() != null) {
+            existingUser.setRole(userDTO.getRole());
+        }
 
         User updatedUser = userRepository.save(existingUser);
         return modelMapper.map(updatedUser, UserDTO.class);

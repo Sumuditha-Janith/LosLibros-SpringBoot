@@ -21,11 +21,11 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createAdminUser() {
-        // Check if admin already exists
         if (userRepository.findByUsername("admin").isEmpty()) {
             User adminUser = User.builder()
                     .username("admin")
                     .password(passwordEncoder.encode("1234"))
+                    .address("address")
                     .email("admin@loslibros.com")
                     .role(Role.ADMIN)
                     .build();
@@ -35,7 +35,5 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             System.out.println("Admin user already exists");
         }
-
-
     }
 }

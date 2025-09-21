@@ -68,6 +68,10 @@
                         <input type="text" class="form-control" id="username" placeholder="Enter username" required>
                     </div>
                     <div class="mb-3">
+                        <label for="address" class="form-label">Address *</label>
+                        <input type="text" class="form-control" id="address" placeholder="Enter your address" required>
+                    </div>
+                    <div class="mb-3">
                         <label for="email" class="form-label">Email *</label>
                         <input type="email" class="form-control" id="email" placeholder="Enter email" required>
                     </div>
@@ -118,11 +122,12 @@
         $('#signUpBtn').on('click', function() {
             const username = $('#username').val().trim();
             const email = $('#email').val().trim();
+            const address = $('#address').val().trim();
             const password = $('#password').val();
             const confirmPassword = $('#confirmPassword').val();
 
             // Validation
-            if (!username || !email || !password || !confirmPassword) {
+            if (!username || !email || !address || !password || !confirmPassword) {
                 alert('Please fill in all fields');
                 return;
             }
@@ -149,7 +154,6 @@
                 return;
             }
 
-            // Always set role to USER
             const role = "USER";
 
             $.ajax({
@@ -159,11 +163,12 @@
                 data: JSON.stringify({
                     username: username,
                     email: email,
+                    address: address,
                     password: password,
                     role: role
                 }),
                 success: function(response) {
-                    alert(response.message);
+                    alert(response.message || 'User registered successfully');
                     window.location.href = 'signIn.html';
                 },
                 error: function(xhr) {
