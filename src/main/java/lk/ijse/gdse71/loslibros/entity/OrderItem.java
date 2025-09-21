@@ -20,6 +20,9 @@ public class OrderItem {
     private int quantity;
     private Double price;
 
+    private Double originalPrice; //track price before discount
+    private Boolean onSale; //track if item was on sale
+
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;

@@ -3,6 +3,7 @@ package lk.ijse.gdse71.loslibros.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -17,4 +18,8 @@ public class BookDTO {
     private AuthorDTO bookAuthor;
     private CategoryDTO bookCategory;
     private PublisherDTO bookPublisher;
+
+    private Double discountedPrice;
+    private Date saleEndDate;
+    private String saleDescription;
 }

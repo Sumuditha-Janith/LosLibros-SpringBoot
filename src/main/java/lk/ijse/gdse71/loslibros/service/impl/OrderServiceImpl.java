@@ -6,12 +6,14 @@ import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
 import lk.ijse.gdse71.loslibros.entity.*;
 import lk.ijse.gdse71.loslibros.repository.BookRepository;
 import lk.ijse.gdse71.loslibros.repository.OrderRepository;
+import lk.ijse.gdse71.loslibros.repository.PublisherSaleRepository;
 import lk.ijse.gdse71.loslibros.repository.UserRepository;
 import lk.ijse.gdse71.loslibros.service.OrderService;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,12 +24,17 @@ public class OrderServiceImpl implements OrderService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final ModelMapper mapper;
+    private final PublisherSaleRepository publisherSaleRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository, BookRepository bookRepository,
-                            UserRepository userRepository, ModelMapper mapper) {
+    public OrderServiceImpl(OrderRepository orderRepository,
+                            BookRepository bookRepository,
+                            UserRepository userRepository,
+                            PublisherSaleRepository publisherSaleRepository,
+                            ModelMapper mapper) {
         this.orderRepository = orderRepository;
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
+        this.publisherSaleRepository = publisherSaleRepository;
         this.mapper = mapper;
     }
 
@@ -54,6 +61,20 @@ public class OrderServiceImpl implements OrderService {
                 throw new RuntimeException("Not enough stock for book: " + book.getBookTitle());
             }
 
+            // Check if book is on sale
+            Double finalPrice = book.getBookPrice();
+            Boolean onSale = false;
+
+            List<PublisherSale> activeSales = publisherSaleRepository
+                    .findActiveSalesByPublisher(book.getBookPublisher().getPublisherId(), new Date());
+
+            if (!activeSales.isEmpty()) {
+                PublisherSale activeSale = activeSales.get(0);
+                double discount = activeSale.getDiscountPercentage();
+                finalPrice = book.getBookPrice() * (1 - discount / 100);
+                onSale = true;
+            }
+
             // reduce stock
             book.setBookQuantity(book.getBookQuantity() - req.getQuantity());
             bookRepository.save(book);
@@ -62,7 +83,9 @@ public class OrderServiceImpl implements OrderService {
                     .bookId(book.getBookId())
                     .bookTitle(book.getBookTitle())
                     .quantity(req.getQuantity())
-                    .price(book.getBookPrice())
+                    .price(finalPrice)
+                    .originalPrice(book.getBookPrice()) // Store original price
+                    .onSale(onSale) // Mark if purchased during sale
                     .build();
         }).collect(Collectors.toList());
 

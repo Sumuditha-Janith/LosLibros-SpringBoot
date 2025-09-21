@@ -363,6 +363,17 @@
         $('#checkoutBtn').on('click', showCheckout);
         $('#confirmPaymentBtn').on('click', processPayment);
 
+        // Add event listeners for book card buttons (missing code)
+        $(document).on('click', '.view-details-btn', function() {
+            const bookId = $(this).data('id');
+            showBookDetails(bookId);
+        });
+
+        $(document).on('click', '.add-to-cart-btn', function() {
+            const bookId = $(this).data('id');
+            addToCart(bookId, 1); // Default quantity 1
+        });
+
         // Payment method toggle
         $('input[name="paymentMethod"]').on('change', function() {
             if ($('#creditCard').is(':checked')) {
@@ -419,64 +430,90 @@
 
     function displayBooks(books) {
         const container = $('#booksContainer');
-
-        if (books.length === 0) {
-            $('#noBooksAlert').show();
-            container.empty();
-            return;
-        }
-
-        $('#noBooksAlert').hide();
+        container.empty();
 
         books.forEach(book => {
             const stockStatus = getStockStatus(book.bookQuantity);
+            const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
+
+            const priceDisplay = hasDiscount ?
+                `<span class="text-decoration-line-through text-muted me-2">$${book.bookPrice.toFixed(2)}</span>
+             <span class="price-tag">$${book.discountedPrice.toFixed(2)}</span>` :
+                `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
+
+            const countdown = hasDiscount ?
+                `<div class="sale-countdown mt-2" data-end="${new Date(book.saleEndDate).getTime()}">
+                 <small class="text-danger">Sale ends in: <span class="countdown-timer"></span></small>
+             </div>` : '';
+
             const card = `
-                <div class="col-md-4 col-lg-3 mb-4">
-                    <div class="card book-card h-100">
-                        ${book.bookImage ?
-                `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}"
-                                 onerror="this.src='https://via.placeholder.com/200x250?text=No+Image'">` :
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card book-card h-100">
+                    ${book.bookImage ?
+                `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}">` :
                 `<div class="book-image card-img-top d-flex align-items-center justify-content-center bg-light">
-                                <i class="fas fa-book fa-3x text-muted"></i>
-                             </div>`
+                            <i class="fas fa-book fa-3x text-muted"></i>
+                         </div>`
             }
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">${book.bookTitle}</h5>
-                            <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
-                            <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
-                            <div class="mt-auto">
-                                <p class="price-tag">$${book.bookPrice.toFixed(2)}</p>
-                                <p class="stock-info ${stockStatus.class}">
-                                    <i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}
-                                </p>
-                                <div class="d-grid gap-2">
-                                    <button class="btn btn-outline-primary view-details-btn" data-id="${book.bookId}">
-                                        <i class="fas fa-info-circle me-1"></i> Details
-                                    </button>
-                                    ${book.bookQuantity > 0 ?
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${book.bookTitle}</h5>
+                        <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
+                        <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
+                        <div class="mt-auto">
+                            <div class="price-tag">
+                                ${priceDisplay}
+                            </div>
+                            ${countdown}
+                            <p class="stock-info ${stockStatus.class}">
+                                <i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}
+                            </p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary view-details-btn" data-id="${book.bookId}">
+                                    <i class="fas fa-info-circle me-1"></i> Details
+                                </button>
+                                ${book.bookQuantity > 0 ?
                 `<button class="btn btn-primary add-to-cart-btn" data-id="${book.bookId}">
-                                            <i class="fas fa-cart-plus me-1"></i> Add to Cart
-                                        </button>` :
+                                        <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                                    </button>` :
                 `<button class="btn btn-secondary" disabled>Out of Stock</button>`
             }
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
             container.append(card);
         });
 
-        // Add event listeners to buttons
-        $('.view-details-btn').on('click', function() {
-            const bookId = $(this).data('id');
-            showBookDetails(bookId);
-        });
+        // Initialize countdown timers
+        initializeCountdowns();
+    }
 
-        $('.add-to-cart-btn').on('click', function() {
-            const bookId = $(this).data('id');
-            addToCart(bookId, 1);
+    function initializeCountdowns() {
+        $('.sale-countdown').each(function() {
+            const endTime = $(this).data('end');
+            const countdownElement = $(this).find('.countdown-timer');
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    countdownElement.text('Sale ended');
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownElement.text(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
         });
     }
 

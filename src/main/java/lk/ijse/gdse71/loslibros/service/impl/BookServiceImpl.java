@@ -3,19 +3,14 @@ package lk.ijse.gdse71.loslibros.service.impl;
 import jakarta.transaction.Transactional;
 import lk.ijse.gdse71.loslibros.dto.BookDTO;
 import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
-import lk.ijse.gdse71.loslibros.entity.Author;
-import lk.ijse.gdse71.loslibros.entity.Book;
-import lk.ijse.gdse71.loslibros.entity.Category;
-import lk.ijse.gdse71.loslibros.entity.Publisher;
-import lk.ijse.gdse71.loslibros.repository.AuthorRepository;
-import lk.ijse.gdse71.loslibros.repository.BookRepository;
-import lk.ijse.gdse71.loslibros.repository.CategoryRepository;
-import lk.ijse.gdse71.loslibros.repository.PublisherRepository;
+import lk.ijse.gdse71.loslibros.entity.*;
+import lk.ijse.gdse71.loslibros.repository.*;
 import lk.ijse.gdse71.loslibros.service.BookService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,7 +30,24 @@ public class BookServiceImpl implements BookService {
     private PublisherRepository publisherRepository;
 
     @Autowired
+    private PublisherSaleRepository publisherSaleRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
+
+    public BookServiceImpl(BookRepository bookRepository,
+                           AuthorRepository authorRepository,
+                           CategoryRepository categoryRepository,
+                           PublisherRepository publisherRepository,
+                           PublisherSaleRepository publisherSaleRepository,
+                           ModelMapper modelMapper) {
+        this.bookRepository = bookRepository;
+        this.authorRepository = authorRepository;
+        this.categoryRepository = categoryRepository;
+        this.publisherRepository = publisherRepository;
+        this.publisherSaleRepository = publisherSaleRepository;
+        this.modelMapper = modelMapper;
+    }
 
     @Override
     public BookDTO saveBook(BookDTO bookDTO) {
@@ -65,8 +77,25 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public List<BookDTO> getAllBooks() {
-        return bookRepository.findAll().stream()
-                .map(this::convertToDTO)
+        List<Book> books = bookRepository.findAll();
+        // Get all active sales
+        List<PublisherSale> activeSales = publisherSaleRepository.findAllActiveSales(new Date());
+
+        return books.stream()
+                .map(book -> {
+                    BookDTO dto = convertToDTO(book);
+                    // Check if book's publisher has an active sale
+                    activeSales.stream()
+                            .filter(sale -> sale.getPublisher().getPublisherId().equals(book.getBookPublisher().getPublisherId()))
+                            .findFirst()
+                            .ifPresent(sale -> {
+                                double discount = sale.getDiscountPercentage();
+                                dto.setDiscountedPrice(book.getBookPrice() * (1 - discount / 100));
+                                dto.setSaleEndDate(sale.getEndDate());
+                                dto.setSaleDescription(sale.getSaleDescription());
+                            });
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -74,7 +103,22 @@ public class BookServiceImpl implements BookService {
     public BookDTO getBookById(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
-        return convertToDTO(book);
+
+        BookDTO dto = convertToDTO(book);
+
+        // Check for active sales
+        List<PublisherSale> activeSales = publisherSaleRepository
+                .findActiveSalesByPublisher(book.getBookPublisher().getPublisherId(), new Date());
+
+        if (!activeSales.isEmpty()) {
+            PublisherSale activeSale = activeSales.get(0);
+            double discount = activeSale.getDiscountPercentage();
+            dto.setDiscountedPrice(book.getBookPrice() * (1 - discount / 100));
+            dto.setSaleEndDate(activeSale.getEndDate());
+            dto.setSaleDescription(activeSale.getSaleDescription());
+        }
+
+        return dto;
     }
 
     @Override
