@@ -114,7 +114,7 @@
                             <input type="text" class="form-control" id="bookTitle" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="bookPrice" class="form-label">Price *</label>
+                            <label for="bookPrice" class="form-label">Price (LKR)</label>
                             <input type="number" class="form-control" id="bookPrice" step="0.01" min="0" required>
                         </div>
                     </div>
@@ -159,7 +159,7 @@
                         <div class="col-md-4 mb-3">
                             <label for="bookPublisher" class="form-label">Publisher</label>
                             <select class="form-select" id="bookPublisher">
-                                <option value="">Select Publisher (Optional)</option>
+                                <option value="">Select Publisher</option>
                                 <!-- Publishers will be populated here -->
                             </select>
                         </div>
@@ -571,7 +571,7 @@
                     </td>
                     <td>${book.bookTitle}</td>
                     <td>${description}</td>
-                    <td>$${book.bookPrice.toFixed(2)}</td>
+                    <td>Rs. ${book.bookPrice.toFixed(2)}</td>
                     <td>${book.bookQuantity}</td>
                     <td>${book.bookAuthor?.authorName || 'Unknown'}</td>
                     <td>${book.bookCategory?.categoryName || 'Unknown'}</td>
