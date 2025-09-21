@@ -3,8 +3,14 @@ package lk.ijse.gdse71.loslibros.service.impl;
 import jakarta.transaction.Transactional;
 import lk.ijse.gdse71.loslibros.dto.BookDTO;
 import lk.ijse.gdse71.loslibros.dto.PurchaseRequest;
+import lk.ijse.gdse71.loslibros.entity.Author;
 import lk.ijse.gdse71.loslibros.entity.Book;
+import lk.ijse.gdse71.loslibros.entity.Category;
+import lk.ijse.gdse71.loslibros.entity.Publisher;
+import lk.ijse.gdse71.loslibros.repository.AuthorRepository;
 import lk.ijse.gdse71.loslibros.repository.BookRepository;
+import lk.ijse.gdse71.loslibros.repository.CategoryRepository;
+import lk.ijse.gdse71.loslibros.repository.PublisherRepository;
 import lk.ijse.gdse71.loslibros.service.BookService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +26,39 @@ public class BookServiceImpl implements BookService {
     private BookRepository bookRepository;
 
     @Autowired
+    private AuthorRepository authorRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private PublisherRepository publisherRepository;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Override
     public BookDTO saveBook(BookDTO bookDTO) {
         Book book = modelMapper.map(bookDTO, Book.class);
+
+        if (bookDTO.getBookAuthor() != null && bookDTO.getBookAuthor().getAuthorId() != null) {
+            Author author = authorRepository.findById(bookDTO.getBookAuthor().getAuthorId())
+                    .orElseThrow(() -> new RuntimeException("Author not found with id: " + bookDTO.getBookAuthor().getAuthorId()));
+            book.setBookAuthor(author);
+        }
+
+        if (bookDTO.getBookCategory() != null && bookDTO.getBookCategory().getCategoryId() != null) {
+            Category category = categoryRepository.findById(bookDTO.getBookCategory().getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + bookDTO.getBookCategory().getCategoryId()));
+            book.setBookCategory(category);
+        }
+
+        if (bookDTO.getBookPublisher() != null && bookDTO.getBookPublisher().getPublisherId() != null) {
+            Publisher publisher = publisherRepository.findById(bookDTO.getBookPublisher().getPublisherId())
+                    .orElseThrow(() -> new RuntimeException("Publisher not found with id: " + bookDTO.getBookPublisher().getPublisherId()));
+            book.setBookPublisher(publisher);
+        }
+
         Book savedBook = bookRepository.save(book);
         return convertToDTO(savedBook);
     }
@@ -61,6 +95,24 @@ public class BookServiceImpl implements BookService {
         existingBook.setBookPrice(bookDTO.getBookPrice());
         existingBook.setBookQuantity(bookDTO.getBookQuantity());
         existingBook.setBookImage(bookDTO.getBookImage());
+
+        if (bookDTO.getBookAuthor() != null && bookDTO.getBookAuthor().getAuthorId() != null) {
+            Author author = authorRepository.findById(bookDTO.getBookAuthor().getAuthorId())
+                    .orElseThrow(() -> new RuntimeException("Author not found with id: " + bookDTO.getBookAuthor().getAuthorId()));
+            existingBook.setBookAuthor(author);
+        }
+
+        if (bookDTO.getBookCategory() != null && bookDTO.getBookCategory().getCategoryId() != null) {
+            Category category = categoryRepository.findById(bookDTO.getBookCategory().getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + bookDTO.getBookCategory().getCategoryId()));
+            existingBook.setBookCategory(category);
+        }
+
+        if (bookDTO.getBookPublisher() != null && bookDTO.getBookPublisher().getPublisherId() != null) {
+            Publisher publisher = publisherRepository.findById(bookDTO.getBookPublisher().getPublisherId())
+                    .orElseThrow(() -> new RuntimeException("Publisher not found with id: " + bookDTO.getBookPublisher().getPublisherId()));
+            existingBook.setBookPublisher(publisher);
+        }
 
         Book updatedBook = bookRepository.save(existingBook);
         return convertToDTO(updatedBook);
