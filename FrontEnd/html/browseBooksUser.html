@@ -80,7 +80,6 @@
     </style>
 </head>
 <body>
-<div id="navbar-container"></div>
 
 <div class="container" style="margin-top: 80px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -394,7 +393,7 @@
 
         // Show page content
         $('body').show();
-        $('#userRoleInfo').text(`Role: ${role}`);
+        $('#userRoleInfo').text(`Role: ${role}`).hide(); //NO NEED TO SHOW THE ROLE
 
         // Load cart from localStorage if available
         const savedCart = localStorage.getItem(cartKey);
