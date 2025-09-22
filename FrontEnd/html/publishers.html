@@ -6,6 +6,8 @@
   <title>Manage Publishers - LosLibros</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <style>
     body {
       display: none;
@@ -111,6 +113,8 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/api.js"></script>
 <script src="../js/navbar.js"></script>
 <script>
@@ -192,7 +196,12 @@
     };
 
     if (!publisherData.publisherName) {
-      alert('Please fill in the publisher name');
+      Swal.fire({
+        icon: 'error',
+        title: 'Missing Information',
+        text: 'Please fill in the publisher name',
+        confirmButtonColor: '#0d6efd'
+      });
       return;
     }
 
@@ -201,12 +210,22 @@
 
     makeApiCall(url, method, publisherData)
             .then(newPublisher => {
-              alert(`Publisher ${publisherId ? 'updated' : 'added'} successfully!`);
+              Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: `Publisher ${publisherId ? 'updated' : 'added'} successfully!`,
+                confirmButtonColor: '#0d6efd'
+              });
               $('#publisherModal').modal('hide');
               loadPublishers();
             })
             .catch(error => {
-              alert(`Failed to ${publisherId ? 'update' : 'add'} publisher: ` + error);
+              Swal.fire({
+                icon: 'error',
+                title: publisherId ? 'Update Failed' : 'Add Failed',
+                text: `Failed to ${publisherId ? 'update' : 'add'} publisher: ${error}`,
+                confirmButtonColor: '#0d6efd'
+              });
             });
   }
 
@@ -215,12 +234,22 @@
 
     makeApiCall(`/api/v1/publishers/${currentPublisherId}`, 'DELETE')
             .then(() => {
-              alert('Publisher deleted successfully!');
+              Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: 'Publisher deleted successfully!',
+                confirmButtonColor: '#0d6efd'
+              });
               $('#deleteModal').modal('hide');
               loadPublishers();
             })
             .catch(error => {
-              alert('Failed to delete publisher: ' + error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: 'Failed to delete publisher: ' + error,
+                confirmButtonColor: '#0d6efd'
+              });
             });
   }
 
