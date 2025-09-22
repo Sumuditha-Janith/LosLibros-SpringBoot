@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Management - LosLibros</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .message-card {
+      border-left: 4px solid #007bff;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .message-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .message-card.pending {
+      border-left-color: #ffc107;
+      background-color: #fffbf0;
+    }
+    .message-card.responded {
+      border-left-color: #28a745;
+      background-color: #f8fff9;
+    }
+    .message-card.closed {
+      border-left-color: #6c757d;
+      background-color: #f8f9fa;
+    }
+    .staff-reply {
+      background-color: #e8f4fd;
+      border-left: 4px solid #17a2b8;
+    }
+    .user-message {
+      background-color: #ffffff;
+    }
+    .timestamp {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    .user-badge {
+      font-size: 0.8rem;
+    }
+    .stats-card {
+      transition: transform 0.3s;
+    }
+    .stats-card:hover {
+      transform: translateY(-5px);
+    }
+    .unread-indicator {
+      width: 10px;
+      height: 10px;
+      background-color: #dc3545;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+<!-- Navbar will be loaded based on role -->
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-headset me-2"></i>Contact Management</h2>
+        <div class="d-flex gap-2">
+          <span class="badge bg-primary" id="pendingCount">0 Pending</span>
+          <span class="badge bg-success" id="totalCount">0 Total</span>
+        </div>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card stats-card bg-primary text-white">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                  <h5 class="card-title">Pending</h5>
+                  <h2 id="statsPending">0</h2>
+                </div>
+                <div>
+                  <i class="fas fa-clock fa-2x opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                  <h5 class="card-title">Responded</h5>
+                  <h2 id="statsResponded">0</h2>
+                </div>
+                <div>
+                  <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                  <h5 class="card-title">Total</h5>
+                  <h2 id="statsTotal">0</h2>
+                </div>
+                <div>
+                  <i class="fas fa-envelope fa-2x opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                  <h5 class="card-title">Today</h5>
+                  <h2 id="statsToday">0</h2>
+                </div>
+                <div>
+                  <i class="fas fa-calendar-day fa-2x opacity-50"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters and Search -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <label for="statusFilter" class="form-label">Filter by Status</label>
+              <select class="form-select" id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="RESPONDED">Responded</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="dateFilter" class="form-label">Filter by Date</label>
+              <select class="form-select" id="dateFilter">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="searchInput" class="form-label">Search Messages</label>
+              <input type="text" class="form-control" id="searchInput"
+                     placeholder="Search by subject, message, user, or email...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button class="btn btn-outline-secondary w-100" id="clearFilters">
+                <i class="fas fa-times me-1"></i> Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages List -->
+      <div class="card">
+        <div class="card-body">
+          <div class="alert alert-info" id="loadingAlert">
+            <i class="fas fa-spinner fa-spin me-2"></i> Loading messages...
+          </div>
+
+          <div id="messagesContainer">
+            <!-- Messages will be populated here -->
+          </div>
+
+          <div class="alert alert-warning" id="noMessagesAlert" style="display: none;">
+            <i class="fas fa-inbox me-2"></i> No messages found matching your criteria.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message Thread Modal -->
+<div class="modal fade" id="messageThreadModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="threadModalTitle">Message Thread</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- User Information -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <h6>User Information</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <strong>Name:</strong> <span id="userName">-</span>
+              </div>
+              <div class="col-md-6">
+                <strong>Email:</strong> <span id="userEmail">-</span>
+              </div>
+              <div class="col-md-6">
+                <strong>Message Date:</strong> <span id="messageDate">-</span>
+              </div>
+              <div class="col-md-6">
+                <strong>Status:</strong> <span id="messageStatus">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thread Messages -->
+        <div id="threadContainer">
+          <!-- Thread messages will be populated here -->
+        </div>
+
+        <!-- Reply Section -->
+        <div id="replySection">
+          <hr>
+          <h6>Reply to User</h6>
+          <div class="mb-3">
+                        <textarea class="form-control" id="replyMessage" rows="4"
+                                  placeholder="Type your reply message..."></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary" id="sendReplyBtn">
+              <i class="fas fa-reply me-1"></i> Send Reply
+            </button>
+            <button class="btn btn-warning" id="closeThreadBtn">
+              <i class="fas fa-lock me-1"></i> Close Thread
+            </button>
+            <button class="btn btn-outline-secondary" id="markPendingBtn" style="display: none;">
+              <i class="fas fa-clock me-1"></i> Reopen Thread
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  let allMessages = [];
+  let currentThreadId = null;
+  let currentThreadStatus = null;
+
+  $(document).ready(function() {
+    // Load appropriate navbar based on role
+    const role = localStorage.getItem('role');
+    if (role === 'ADMIN') {
+      $("#navbar-container").load("adminNavbar.html", function() {
+        initializeNavbar();
+        loadMessages();
+        loadStatistics();
+      });
+    } else if (role === 'EMPLOYEE') {
+      $("#navbar-container").load("employeeNavbar.html", function() {
+        initializeNavbar();
+        loadMessages();
+        loadStatistics();
+      });
+    } else {
+      alert('Access denied. Staff only.');
+      window.location.href = 'userDashboard.html';
+      return;
+    }
+
+    // Event listeners
+    $('#statusFilter').change(filterMessages);
+    $('#dateFilter').change(filterMessages);
+    $('#searchInput').on('keyup', debounce(filterMessages, 300));
+    $('#clearFilters').click(clearFilters);
+    $('#sendReplyBtn').click(sendReply);
+    $('#closeThreadBtn').click(closeThread);
+    $('#markPendingBtn').click(reopenThread);
+  });
+
+  function initializeNavbar() {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+
+    if (!token) {
+      window.location.href = 'signIn.html';
+      return;
+    }
+
+    if (username) {
+      $('#usernameDisplay').text(username);
+    }
+
+    $('#logoutBtn').on('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      window.location.href = '../index.html';
+    });
+
+    // Add contact management link to navbar if not present
+    if (!$('#contactManagementLink').length) {
+      $('.navbar-nav').append(`
+                <li class="nav-item">
+                    <a class="nav-link active" href="staffContactManagement.html" id="contactManagementLink">
+                        <i class="fas fa-headset me-1"></i>Contact Management
+                    </a>
+                </li>
+            `);
+    }
+  }
+
+  function loadMessages() {
+    $('#loadingAlert').show();
+    $('#noMessagesAlert').hide();
+
+    makeApiCall('/api/v1/contact/messages', 'GET')
+            .then(response => {
+              // Fix: Extract data from the API response
+              if (response && response.data) {
+                allMessages = response.data;
+                displayMessages(allMessages);
+                updateCounts();
+              } else {
+                console.error('Invalid response structure:', response);
+                $('#messagesContainer').html('<div class="alert alert-danger">Invalid response from server</div>');
+              }
+              $('#loadingAlert').hide();
+            })
+            .catch(error => {
+              $('#loadingAlert').hide();
+              console.error('Failed to load messages:', error);
+              if (error.status === 403) {
+                $('#messagesContainer').html('<div class="alert alert-warning">Access denied. You need staff privileges.</div>');
+              } else {
+                $('#messagesContainer').html('<div class="alert alert-danger">Failed to load messages: ' + (error.responseJSON?.message || error.statusText) + '</div>');
+              }
+            });
+  }
+
+  function loadStatistics() {
+    makeApiCall('/api/v1/contact/messages/pending/count', 'GET')
+            .then(response => {
+              if (response && response.data !== undefined) {
+                $('#statsPending').text(response.data);
+                $('#pendingCount').text(`${response.data} Pending`);
+              }
+            })
+            .catch(error => {
+              console.error('Failed to load pending count:', error);
+            });
+
+    updateStatistics();
+  }
+
+  function updateStatistics() {
+    const respondedCount = allMessages.filter(m => m.status === 'RESPONDED').length;
+    const closedCount = allMessages.filter(m => m.status === 'CLOSED').length;
+    const totalCount = allMessages.length;
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayCount = allMessages.filter(m => {
+      const messageDate = new Date(m.createdAt).toISOString().split('T')[0];
+      return messageDate === today;
+    }).length;
+
+    $('#statsResponded').text(respondedCount);
+    $('#statsTotal').text(totalCount);
+    $('#statsToday').text(todayCount);
+    $('#totalCount').text(`${totalCount} Total`);
+  }
+
+
+  function displayMessages(messages) {
+    const container = $('#messagesContainer');
+    container.empty();
+
+    if (messages.length === 0) {
+      $('#noMessagesAlert').show();
+      return;
+    }
+
+    messages.forEach(message => {
+      const statusBadge = getStatusBadge(message.status);
+      const isUnread = message.status === 'PENDING' && !message.staffId;
+
+      const messageCard = `
+                <div class="card message-card mb-3 ${message.status.toLowerCase()} ${isUnread ? 'border-warning' : ''}"
+                     onclick="viewMessageThread(${message.id})" style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h5 class="card-title mb-0 me-2">${message.subject}</h5>
+                                    ${statusBadge}
+                                    ${isUnread ? '<span class="unread-indicator" title="Unread"></span>' : ''}
+                                </div>
+                                <p class="card-text">${truncateText(message.message, 150)}</p>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="user-badge badge bg-primary">
+                                        <i class="fas fa-user me-1"></i>${message.userName}
+                                    </span>
+                                    <span class="user-badge badge bg-secondary">
+                                        <i class="fas fa-envelope me-1"></i>${message.userEmail}
+                                    </span>
+                                    ${message.staffName ?
+              `<span class="user-badge badge bg-success">
+                                            <i class="fas fa-headset me-1"></i>Handled by: ${message.staffName}
+                                        </span>` : ''
+      }
+                                </div>
+                                <div class="timestamp">
+                                    <i class="fas fa-clock me-1"></i>Received: ${formatDateTime(message.createdAt)}
+                                    ${message.repliedAt ?
+              ` • <i class="fas fa-reply me-1"></i>Replied: ${formatDateTime(message.repliedAt)}` :
+              ''
+      }
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); viewMessageThread(${message.id})">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      container.append(messageCard);
+    });
+  }
+
+  function getStatusBadge(status) {
+    const statusConfig = {
+      'PENDING': { class: 'bg-warning', text: 'Pending', icon: 'fa-clock' },
+      'RESPONDED': { class: 'bg-success', text: 'Responded', icon: 'fa-check' },
+      'CLOSED': { class: 'bg-secondary', text: 'Closed', icon: 'fa-lock' }
+    };
+
+    const config = statusConfig[status] || statusConfig.PENDING;
+    return `<span class="badge ${config.class}"><i class="fas ${config.icon} me-1"></i>${config.text}</span>`;
+  }
+
+  function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+  function formatDateTime(dateTime) {
+    return new Date(dateTime).toLocaleString();
+  }
+
+  function filterMessages() {
+    const statusFilter = $('#statusFilter').val();
+    const dateFilter = $('#dateFilter').val();
+    const searchTerm = $('#searchInput').val().toLowerCase();
+
+    let filtered = allMessages;
+
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(msg => msg.status === statusFilter);
+    }
+
+    // Apply date filter
+    if (dateFilter) {
+      const now = new Date();
+      filtered = filtered.filter(msg => {
+        const messageDate = new Date(msg.createdAt);
+        switch (dateFilter) {
+          case 'today':
+            return messageDate.toDateString() === now.toDateString();
+          case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return messageDate >= weekAgo;
+          case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return messageDate >= monthAgo;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(msg =>
+              msg.subject.toLowerCase().includes(searchTerm) ||
+              msg.message.toLowerCase().includes(searchTerm) ||
+              msg.userName.toLowerCase().includes(searchTerm) ||
+              msg.userEmail.toLowerCase().includes(searchTerm) ||
+              (msg.staffName && msg.staffName.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    displayMessages(filtered);
+  }
+
+  function clearFilters() {
+    $('#statusFilter').val('');
+    $('#dateFilter').val('');
+    $('#searchInput').val('');
+    displayMessages(allMessages);
+  }
+
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  function updateCounts() {
+    const pendingCount = allMessages.filter(msg => msg.status === 'PENDING').length;
+    $('#pendingCount').text(`${pendingCount} Pending`);
+    updateStatistics();
+  }
+
+  function viewMessageThread(messageId) {
+    currentThreadId = messageId;
+
+    makeApiCall(`/api/v1/contact/messages/${messageId}/thread/staff`, 'GET')
+            .then(response => {
+              if (response && response.data) {
+                displayThreadModal(response.data);
+                $('#messageThreadModal').modal('show');
+              } else {
+                alert('Failed to load message thread: Invalid response');
+              }
+            })
+            .catch(error => {
+              console.error('Failed to load thread:', error);
+              alert('Failed to load message thread: ' + (error.responseJSON?.message || error.statusText));
+            });
+  }
+
+  function displayThreadModal(thread) {
+    const originalMessage = thread.originalMessage;
+    const replies = thread.replies || [];
+    currentThreadStatus = originalMessage.status;
+
+    // Update modal title and user info
+    $('#threadModalTitle').text(`Thread: ${originalMessage.subject}`);
+    $('#userName').text(originalMessage.userName);
+    $('#userEmail').text(originalMessage.userEmail);
+    $('#messageDate').text(formatDateTime(originalMessage.createdAt));
+    $('#messageStatus').html(getStatusBadge(originalMessage.status));
+
+    // Build thread content
+    let threadHTML = `
+            <div class="card user-message mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6><i class="fas fa-user me-1"></i> ${originalMessage.userName}</h6>
+                            <p class="mb-1">${originalMessage.message}</p>
+                        </div>
+                        <small class="timestamp">${formatDateTime(originalMessage.createdAt)}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+
+    replies.forEach(reply => {
+      const isStaffReply = reply.staffId !== null;
+      threadHTML += `
+                <div class="card ${isStaffReply ? 'staff-reply' : 'user-message'} mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6><i class="fas ${isStaffReply ? 'fa-headset' : 'fa-user'} me-1"></i>
+                                    ${isStaffReply ? `Staff (${reply.staffName})` : originalMessage.userName}
+                                </h6>
+                                <p class="mb-1">${reply.message}</p>
+                            </div>
+                            <small class="timestamp">${formatDateTime(reply.createdAt)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+    });
+
+    $('#threadContainer').html(threadHTML);
+
+    // Update reply section based on status
+    updateReplySection(originalMessage.status);
+  }
+
+  function updateReplySection(status) {
+    const replySection = $('#replySection');
+    const closeBtn = $('#closeThreadBtn');
+    const reopenBtn = $('#markPendingBtn');
+
+    switch (status) {
+      case 'PENDING':
+        replySection.show();
+        closeBtn.show();
+        reopenBtn.hide();
+        $('#replyMessage').prop('disabled', false);
+        break;
+      case 'RESPONDED':
+        replySection.show();
+        closeBtn.show();
+        reopenBtn.hide();
+        $('#replyMessage').prop('disabled', false);
+        break;
+      case 'CLOSED':
+        replySection.show();
+        closeBtn.hide();
+        reopenBtn.show();
+        $('#replyMessage').prop('disabled', true);
+        break;
+    }
+  }
+
+  function sendReply() {
+    const replyText = $('#replyMessage').val().trim();
+
+    if (!replyText) {
+      alert('Please enter a reply message');
+      return;
+    }
+
+    $('#sendReplyBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+
+    const request = {
+      message: replyText
+    };
+
+    makeApiCall(`/api/v1/contact/messages/${currentThreadId}/reply`, 'POST', request)
+            .then(response => {
+              $('#replyMessage').val('');
+              $('#messageThreadModal').modal('hide');
+              loadMessages(); // Refresh the list
+              alert('Reply sent successfully!');
+            })
+            .catch(error => {
+              alert('Failed to send reply: ' + error);
+            })
+            .finally(() => {
+              $('#sendReplyBtn').prop('disabled', false).html('<i class="fas fa-reply me-1"></i> Send Reply');
+            });
+  }
+
+  function closeThread() {
+    if (!confirm('Are you sure you want to close this thread? The user will not be able to reply further.')) {
+      return;
+    }
+
+    makeApiCall(`/api/v1/contact/messages/${currentThreadId}/close`, 'PATCH')
+            .then(response => {
+              if (response && response.data) {
+                $('#messageThreadModal').modal('hide');
+                loadMessages();
+                alert('Thread closed successfully!');
+              } else {
+                alert('Failed to close thread: Invalid response');
+              }
+            })
+            .catch(error => {
+              alert('Failed to close thread: ' + (error.responseJSON?.message || error.statusText));
+            });
+  }
+
+  function reopenThread() {
+    if (!confirm('Are you sure you want to reopen this thread?')) {
+      return;
+    }
+
+    // For reopening, we'll need to create a new message or update status
+    // This would require additional backend endpoint
+    alert('Reopening functionality would require additional backend implementation.');
+  }
+</script>
+</body>
+</html>

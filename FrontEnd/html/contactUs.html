@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - LosLibros</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .message-card {
+      border-left: 4px solid #007bff;
+      transition: transform 0.2s;
+    }
+    .message-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .message-card.responded {
+      border-left-color: #28a745;
+    }
+    .message-card.closed {
+      border-left-color: #6c757d;
+    }
+    .staff-reply {
+      background-color: #f8f9fa;
+      border-left: 4px solid #28a745;
+    }
+    .user-message {
+      background-color: #ffffff;
+    }
+    .timestamp {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 mx-auto">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-envelope me-2"></i>Contact Support</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newMessageModal">
+          <i class="fas fa-plus me-1"></i> New Message
+        </button>
+      </div>
+
+      <div class="alert alert-info" id="loadingAlert">
+        <i class="fas fa-spinner fa-spin me-2"></i> Loading your messages...
+      </div>
+
+      <div id="messagesContainer">
+        <!-- Messages will be populated here -->
+      </div>
+
+      <div class="alert alert-warning" id="noMessagesAlert" style="display: none;">
+        <i class="fas fa-inbox me-2"></i> You haven't sent any messages yet.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Message Modal -->
+<div class="modal fade" id="newMessageModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">New Message to Support</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="newMessageForm">
+          <div class="mb-3">
+            <label for="subject" class="form-label">Subject</label>
+            <input type="text" class="form-control" id="subject" required>
+          </div>
+          <div class="mb-3">
+            <label for="message" class="form-label">Message</label>
+            <textarea class="form-control" id="message" rows="5" required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="sendMessageBtn">Send Message</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message Thread Modal -->
+<div class="modal fade" id="messageThreadModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="threadTitle">Message Thread</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="threadContainer">
+          <!-- Thread messages will be populated here -->
+        </div>
+
+        <!-- Reply Section (only show if not responded) -->
+        <div id="replySection" style="display: none;">
+          <hr>
+          <h6>Reply to this message</h6>
+          <textarea class="form-control mb-2" id="replyMessage" rows="3" placeholder="Type your reply..."></textarea>
+          <button class="btn btn-primary" id="sendReplyBtn">Send Reply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  let currentThreadId = null;
+
+  $(document).ready(function() {
+    // Load navbar
+    $("#navbar-container").load("userNavbar.html", function() {
+      initializeNavbar();
+      loadUserMessages();
+    });
+
+    // Send new message
+    $('#sendMessageBtn').on('click', sendNewMessage);
+
+    // Send reply
+    $('#sendReplyBtn').on('click', sendReply);
+  });
+
+  function initializeNavbar() {
+    const token = localStorage.getItem('token');
+    const username = localStorage.getItem('username');
+
+    if (!token) {
+      window.location.href = 'signIn.html';
+      return;
+    }
+
+    if (username) {
+      $('#usernameDisplay').text(username);
+    }
+
+    $('#logoutBtn').on('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      window.location.href = '../index.html';
+    });
+  }
+
+  function loadUserMessages() {
+    $('#loadingAlert').show();
+    $('#noMessagesAlert').hide();
+
+    makeApiCall('/api/v1/contact/messages/my-messages', 'GET')
+            .then(response => {
+              $('#loadingAlert').hide();
+              console.log('Messages API response:', response);
+
+              if (response && response.data) {
+                displayMessages(response.data);
+              } else {
+                console.error('Invalid response structure:', response);
+                $('#messagesContainer').html('<div class="alert alert-danger">Invalid response from server</div>');
+              }
+            })
+            .catch(error => {
+              $('#loadingAlert').hide();
+              console.error('Failed to load messages:', error);
+              let errorMsg = 'Failed to load messages';
+              if (error.responseData && error.responseData.message) {
+                errorMsg = error.responseData.message;
+              } else if (error.message) {
+                errorMsg = error.message;
+              }
+              $('#messagesContainer').html(`<div class="alert alert-danger">${errorMsg}</div>`);
+            });
+  }
+
+  function displayMessages(messages) {
+    const container = $('#messagesContainer');
+    container.empty();
+
+    console.log('Displaying messages:', messages);
+
+    if (!messages || messages.length === 0) {
+      $('#noMessagesAlert').show();
+      return;
+    }
+
+    messages.forEach(message => {
+      const statusBadge = getStatusBadge(message.status);
+      const canEdit = message.canEdit;
+
+      const messageCard = `
+        <div class="card message-card mb-3 ${message.status ? message.status.toLowerCase() : ''}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <h5 class="card-title">${message.subject || 'No Subject'}</h5>
+                <p class="card-text">${truncateText(message.message, 100)}</p>
+                <div class="timestamp">
+                  <i class="fas fa-clock me-1"></i>Sent on ${formatDateTime(message.createdAt)}
+                  ${message.repliedAt ?
+              `<br><i class="fas fa-reply me-1"></i>Replied on ${formatDateTime(message.repliedAt)} by ${message.staffName || 'Staff'}` :
+              ''}
+                </div>
+              </div>
+              <div class="text-end">
+                ${statusBadge}
+                ${canEdit ?
+              `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteMessage(${message.id})">
+                    <i class="fas fa-trash"></i>
+                  </button>` :
+              ''}
+              </div>
+            </div>
+            <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewThread(${message.id})">
+              <i class="fas fa-eye me-1"></i> View Thread
+            </button>
+          </div>
+        </div>
+      `;
+      container.append(messageCard);
+    });
+  }
+
+  function sendNewMessage() {
+    const subject = $('#subject').val().trim();
+    const messageText = $('#message').val().trim();
+
+    if (!subject || !messageText) {
+      alert('Please fill in both subject and message');
+      return;
+    }
+
+    $('#sendMessageBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+
+    const request = {
+      subject: subject,
+      message: messageText
+    };
+
+    console.log('Sending message request:', request);
+
+    makeApiCall('/api/v1/contact/messages', 'POST', request)
+            .then(response => {
+              console.log('Send message response:', response);
+
+              if (response && (response.status === 200 || response.data)) {
+                $('#newMessageModal').modal('hide');
+                $('#newMessageForm')[0].reset();
+                loadUserMessages();
+                alert('Message sent successfully!');
+              } else {
+                throw new Error(response?.message || 'Invalid response from server');
+              }
+            })
+            .catch(error => {
+              console.error('Full error details:', error);
+
+              let errorMessage = 'Failed to send message';
+
+              if (error.responseData) {
+                errorMessage = error.responseData.message || error.message;
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+
+              alert('Failed to send message: ' + errorMessage);
+            })
+            .finally(() => {
+              $('#sendMessageBtn').prop('disabled', false).html('Send Message');
+            });
+  }
+
+  function viewThread(messageId) {
+    currentThreadId = messageId;
+    console.log('Viewing thread for message ID:', messageId);
+
+    makeApiCall(`/api/v1/contact/messages/${messageId}/thread`, 'GET')
+            .then(response => {
+              console.log('Thread API response:', response);
+
+              if (response && response.data) {
+                displayThread(response.data);
+                $('#messageThreadModal').modal('show');
+              } else {
+                throw new Error('Invalid thread response structure: ' + JSON.stringify(response));
+              }
+            })
+            .catch(error => {
+              console.error('Failed to load thread:', error);
+              let errorMsg = 'Failed to load message thread';
+              if (error.responseData && error.responseData.message) {
+                errorMsg = error.responseData.message;
+              } else if (error.message) {
+                errorMsg = error.message;
+              }
+              alert(errorMsg);
+            });
+  }
+
+  function displayThread(thread) {
+    console.log('Displaying thread:', thread);
+
+    const container = $('#threadContainer');
+    const originalMessage = thread.originalMessage;
+    const replies = thread.replies || [];
+
+    $('#threadTitle').text(`Thread: ${originalMessage.subject}`);
+
+    let threadHTML = `
+      <div class="card user-message mb-3">
+        <div class="card-body">
+          <h6>Your Message</h6>
+          <p>${originalMessage.message}</p>
+          <small class="timestamp">Sent on ${formatDateTime(originalMessage.createdAt)}</small>
+        </div>
+      </div>
+    `;
+
+    if (replies && replies.length > 0) {
+      replies.forEach(reply => {
+        const isStaffReply = reply.staffId !== null && reply.staffId !== undefined;
+        threadHTML += `
+          <div class="card ${isStaffReply ? 'staff-reply' : 'user-message'} mb-3">
+            <div class="card-body">
+              <h6>${isStaffReply ? `Reply from ${reply.staffName || 'Staff'}` : 'Your Reply'}</h6>
+              <p>${reply.message}</p>
+              <small class="timestamp">
+                ${formatDateTime(reply.createdAt)}
+                ${isStaffReply && reply.staffName ? ` • ${reply.staffName}` : ''}
+              </small>
+            </div>
+          </div>
+        `;
+      });
+    } else {
+      threadHTML += `
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No replies yet. Staff will respond soon.
+        </div>
+      `;
+    }
+
+    container.html(threadHTML);
+
+    // Show reply section only if the message is still pending
+    if (originalMessage.status === 'PENDING') {
+      $('#replySection').show();
+    } else {
+      $('#replySection').hide();
+    }
+  }
+
+  function sendReply() {
+    const replyText = $('#replyMessage').val().trim();
+
+    if (!replyText) {
+      alert('Please enter a reply message');
+      return;
+    }
+
+    $('#sendReplyBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+
+    const request = {
+      subject: 'Reply',
+      message: replyText,
+      parentMessageId: currentThreadId
+    };
+
+    console.log('Sending reply request:', request);
+
+    makeApiCall('/api/v1/contact/messages', 'POST', request)
+            .then(response => {
+              console.log('Send reply response:', response);
+
+              if (response && (response.status === 200 || response.data)) {
+                $('#replyMessage').val('');
+                viewThread(currentThreadId);
+                loadUserMessages();
+              } else {
+                throw new Error(response?.message || 'Failed to send reply');
+              }
+            })
+            .catch(error => {
+              console.error('Failed to send reply:', error);
+              let errorMsg = 'Failed to send reply';
+              if (error.responseData && error.responseData.message) {
+                errorMsg = error.responseData.message;
+              } else if (error.message) {
+                errorMsg = error.message;
+              }
+              alert(errorMsg);
+            })
+            .finally(() => {
+              $('#sendReplyBtn').prop('disabled', false).html('Send Reply');
+            });
+  }
+
+  function deleteMessage(messageId) {
+    if (!confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
+
+    makeApiCall(`/api/v1/contact/messages/${messageId}`, 'DELETE')
+            .then(response => {
+              if (response && response.status === 200) {
+                loadUserMessages();
+                alert('Message deleted successfully');
+              } else {
+                throw new Error(response?.message || 'Failed to delete message');
+              }
+            })
+            .catch(error => {
+              console.error('Failed to delete message:', error);
+              let errorMsg = 'Failed to delete message';
+              if (error.responseData && error.responseData.message) {
+                errorMsg = error.responseData.message;
+              } else if (error.message) {
+                errorMsg = error.message;
+              }
+              alert(errorMsg);
+            });
+  }
+
+  function getStatusBadge(status) {
+    const statusConfig = {
+      'PENDING': { class: 'bg-warning', text: 'Pending' },
+      'RESPONDED': { class: 'bg-success', text: 'Responded' },
+      'CLOSED': { class: 'bg-secondary', text: 'Closed' }
+    };
+
+    const config = statusConfig[status] || statusConfig.PENDING;
+    return `<span class="badge ${config.class}">${config.text}</span>`;
+  }
+
+  function truncateText(text, maxLength) {
+    if (!text) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+  function formatDateTime(dateTime) {
+    if (!dateTime) return 'Unknown date';
+    return new Date(dateTime).toLocaleString();
+  }
+</script>
+</body>
+</html>

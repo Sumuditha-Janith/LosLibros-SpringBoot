@@ -4,6 +4,7 @@ import lk.ijse.gdse71.loslibros.util.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -39,6 +40,21 @@ public class SecurityConfig {
                                 "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/sales/active").permitAll()
                         .requestMatchers("/api/v1/sales/**").hasRole("ADMIN")
+
+                        //Contact messages - allow users to create and view their own messages/threads
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/my-messages").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/*/thread").authenticated() // ADD THIS LINE
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contact/messages").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/contact/messages/*").authenticated()
+
+                        //Staff-only endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/pending").hasAnyRole("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages").hasAnyRole("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contact/messages/*/reply").hasAnyRole("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/*/thread/staff").hasAnyRole("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/pending/count").hasAnyRole("ADMIN", "EMPLOYEE")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/contact/messages/*/close").hasAnyRole("ADMIN", "EMPLOYEE")
+
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

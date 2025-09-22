@@ -34,28 +34,65 @@ function handleApiError(xhr) {
     return false;
 }
 
-function makeApiCall(url, method, data = null, isText = false) {
+function makeApiCall(url, method, data = null) {
     return new Promise((resolve, reject) => {
-        const contentType = isText ? 'text/plain' : 'application/json';
+        const token = localStorage.getItem('token');
+
+        if (!token && !url.includes('/auth/')) {
+            const error = new Error('No authentication token found. Please login again.');
+            reject(error);
+            window.location.href = 'signIn.html';
+            return;
+        }
+
         const config = {
-            url: API_BASE_URL + url,
             method: method,
-            headers: getAuthHeaders(contentType),
-            success: function(response) {
-                resolve(response);
-            },
-            error: function(xhr) {
-                if (!handleApiError(xhr)) {
-                    const errorMsg = xhr.responseJSON?.message || 'An error occurred';
-                    reject(errorMsg);
-                }
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
             }
         };
 
-        if (data) {
-            config.data = isText ? data : JSON.stringify(data);
+        if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+            config.body = JSON.stringify(data);
         }
 
-        $.ajax(config);
+        console.log('Making API call:', method, url, data);
+
+        fetch(API_BASE_URL + url, config)
+            .then(async response => {
+                const text = await response.text();
+                let responseData;
+
+                try {
+                    responseData = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    console.error('Failed to parse JSON response:', text);
+                    const error = new Error('Invalid JSON response from server');
+                    error.status = response.status;
+                    error.responseText = text;
+                    reject(error);
+                    return;
+                }
+
+                console.log('API response:', response.status, responseData);
+
+                if (response.ok) {
+                    resolve(responseData);
+                } else {
+                    const error = new Error(responseData.message || response.statusText);
+                    error.status = response.status;
+                    error.responseData = responseData;
+                    reject(error);
+                }
+            })
+            .catch(error => {
+                console.error('API call failed:', error);
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    reject(new Error('Network error: Unable to connect to server'));
+                } else {
+                    reject(error);
+                }
+            });
     });
 }
