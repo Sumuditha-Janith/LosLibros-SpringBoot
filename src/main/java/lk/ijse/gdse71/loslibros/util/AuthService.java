@@ -18,6 +18,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final OTPService otpService;
+    private final EmailService emailService;
 
     public AuthResponseDTO authenticate(AuthDTO authDTO) {
         User user = userRepository.findByUsername(authDTO.getUsername())
@@ -37,6 +39,27 @@ public class AuthService {
             throw new RuntimeException("Username is already exist");
         }
 
+        if (userRepository.existsByEmail(registerDTO.getEmail())) {
+            throw new RuntimeException("Email is already registered");
+        }
+
+        // Generate and send OTP
+        String otp = otpService.generateOTP(registerDTO.getEmail());
+        emailService.sendOTPEmail(registerDTO.getEmail(), otp);
+
+        return "OTP sent to your email. Please verify to complete registration.";
+    }
+
+    public String verifyOtpAndRegister(String email, String otp, RegisterDTO registerDTO) {
+        // Validate that the email matches
+        if (!email.equals(registerDTO.getEmail())) {
+            throw new RuntimeException("Email mismatch");
+        }
+
+        if (!otpService.validateOTP(email, otp)) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
         User user = User.builder()
                 .username(registerDTO.getUsername())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
@@ -47,5 +70,29 @@ public class AuthService {
 
         userRepository.save(user);
         return "User registered successfully";
+    }
+
+    public String initiatePasswordReset(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        String otp = otpService.generateOTP(email);
+        emailService.sendPasswordResetEmail(email, otp);
+
+        return "Password reset OTP sent to your email";
+    }
+
+    public String resetPassword(String email, String otp, String newPassword) {
+        if (!otpService.validateOTP(email, otp)) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return "Password reset successfully";
     }
 }

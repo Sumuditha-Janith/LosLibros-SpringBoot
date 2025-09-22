@@ -23,10 +23,67 @@ public class AuthController {
         return ResponseEntity.ok(
                 new ApiResponse(
                         200,
-                        "User registered successfully",
+                        "OTP sent to email",
                         authService.register(registerDTO)
                 )
         );
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ApiResponse> verifyOtpAndRegister(
+            @RequestParam String email,
+            @RequestParam String otp,
+            @RequestBody RegisterDTO registerDTO) {
+        try {
+            String result = authService.verifyOtpAndRegister(email, otp, registerDTO);
+            return ResponseEntity.ok(new ApiResponse(200, "User registered successfully", result));
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(400, e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<ApiResponse> resendOtp(@RequestParam String email) {
+        try {
+            // For registration, we need the RegisterDTO to resend OTP
+            // This would need to be stored temporarily or the user would need to resubmit the form
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(400, "Please submit the registration form again", null));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(500, "Error resending OTP", null));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@RequestParam String email) {
+        try {
+            String result = authService.initiatePasswordReset(email);
+            return ResponseEntity.ok(new ApiResponse(200, "OTP sent to email", result));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(400, e.getMessage(), null));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse> resetPassword(
+            @RequestParam String email,
+            @RequestParam String otp,
+            @RequestParam String newPassword) {
+        try {
+            String result = authService.resetPassword(email, otp, newPassword);
+            return ResponseEntity.ok(new ApiResponse(200, "Password reset successfully", result));
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(400, e.getMessage(), null));
+        }
     }
 
     @PostMapping("/login")
