@@ -80,8 +80,9 @@
     </style>
 </head>
 <body>
+<div id="navbar-container"></div>
 
-<div class="container" style="margin-top: 80px;">
+<div class="container" style="margin-top: 20px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Browse Books</h2>
         <div>
@@ -334,55 +335,91 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
+    $(document).ready(function() {
+        // Load the navbar
+        $("#navbar-container").load("userNavbar.html", function() {
+            // Initialize navbar functionality after it's loaded
+            const token = localStorage.getItem('token');
+            const username = localStorage.getItem('username');
 
-    const API_BASE_URL = 'http://localhost:8080';
-
-    function getAuthHeaders(contentType = 'application/json') {
-        const token = localStorage.getItem('token');
-        const headers = {
-            'Authorization': 'Bearer ' + token
-        };
-
-        if (contentType) {
-            headers['Content-Type'] = contentType;
-        }
-
-        return headers;
-    }
-
-    function makeApiCall(url, method, data = null, isText = false) {
-        return new Promise((resolve, reject) => {
-            const contentType = isText ? 'text/plain' : 'application/json';
-            const config = {
-                url: API_BASE_URL + url,
-                method: method,
-                headers: getAuthHeaders(contentType),
-                success: function(response) {
-                    resolve(response);
-                },
-                error: function(xhr) {
-                    console.error('API call failed:', xhr);
-                    reject(xhr);
-                }
-            };
-
-            if (data) {
-                config.data = isText ? data : JSON.stringify(data);
+            if (!token) {
+                window.location.href = 'signIn.html';
+                return;
             }
 
-            $.ajax(config);
+            // Display username if available
+            if (username) {
+                $('#usernameDisplay').text(username);
+            }
+
+            // Logout functionality
+            $('#logoutBtn').on('click', function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                window.location.href = '../index.html';
+            });
+
+            // Profile link functionality
+            $('#profileLink').on('click', function(e) {
+                e.preventDefault();
+                alert('Profile customization feature will be implemented here.');
+            });
         });
-    }
 
-    let allBooks = [];
-    let allCategories = [];
-    let allAuthors = [];
-    let displayedBooks = 12;
-    let cart = [];
-    const cartKey = 'loslibros_cart';
+        // Rest of your code
+        const API_BASE_URL = 'http://localhost:8080';
 
-    $(document).ready(function() {
+        function getAuthHeaders(contentType = 'application/json') {
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Authorization': 'Bearer ' + token
+            };
+
+            if (contentType) {
+                headers['Content-Type'] = contentType;
+            }
+
+            return headers;
+        }
+
+        function makeApiCall(url, method, data = null, isText = false) {
+            return new Promise((resolve, reject) => {
+                const contentType = isText ? 'text/plain' : 'application/json';
+                const config = {
+                    url: API_BASE_URL + url,
+                    method: method,
+                    headers: getAuthHeaders(contentType),
+                    success: function(response) {
+                        resolve(response);
+                    },
+                    error: function(xhr) {
+                        console.error('API call failed:', xhr);
+                        reject(xhr);
+                    }
+                };
+
+                if (data) {
+                    config.data = isText ? data : JSON.stringify(data);
+                }
+
+                $.ajax(config);
+            });
+        }
+
+        let allBooks = [];
+        let allCategories = [];
+        let allAuthors = [];
+        let displayedBooks = 12;
+        let cart = [];
+        const cartKey = 'loslibros_cart';
+
+        // Show page content
+        $('body').show();
+
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
 
@@ -391,8 +428,6 @@
             return;
         }
 
-        // Show page content
-        $('body').show();
         $('#userRoleInfo').text(`Role: ${role}`).hide(); //NO NEED TO SHOW THE ROLE
 
         // Load cart from localStorage if available
@@ -435,432 +470,431 @@
                 $('#creditCardForm').hide();
             }
         });
-    });
 
-    function loadBooksAndDependencies() {
-        $('#loadingAlert').show();
+        function loadBooksAndDependencies() {
+            $('#loadingAlert').show();
 
-        // Load books, categories, and authors
-        Promise.all([
-            makeApiCall('/api/v1/books/getAllBooks', 'GET'),
-            makeApiCall('/api/v1/categories/getAllCat', 'GET'),
-            makeApiCall('/api/v1/authors/getAllAuth', 'GET')
-        ]).then(([books, categories, authors]) => {
-            allBooks = books;
-            allCategories = categories;
-            allAuthors = authors;
+            // Load books, categories, and authors
+            Promise.all([
+                makeApiCall('/api/v1/books/getAllBooks', 'GET'),
+                makeApiCall('/api/v1/categories/getAllCat', 'GET'),
+                makeApiCall('/api/v1/authors/getAllAuth', 'GET')
+            ]).then(([books, categories, authors]) => {
+                allBooks = books;
+                allCategories = categories;
+                allAuthors = authors;
 
-            // Populate category filter
-            populateFilter('#categoryFilter', allCategories, 'categoryName');
+                // Populate category filter
+                populateFilter('#categoryFilter', allCategories, 'categoryName');
 
-            // Populate author filter
-            populateFilter('#authorFilter', allAuthors, 'authorName');
+                // Populate author filter
+                populateFilter('#authorFilter', allAuthors, 'authorName');
 
-            // Display books
-            displayBooks(allBooks.slice(0, displayedBooks));
+                // Display books
+                displayBooks(allBooks.slice(0, displayedBooks));
 
-            // Show load more button if there are more books
-            if (allBooks.length > displayedBooks) {
-                $('#loadMoreContainer').show();
-            }
+                // Show load more button if there are more books
+                if (allBooks.length > displayedBooks) {
+                    $('#loadMoreContainer').show();
+                }
 
-            $('#loadingAlert').hide();
-        }).catch(error => {
-            console.error('Failed to load data:', error);
-            $('#loadingAlert').hide();
-            $('#noBooksAlert').show();
-        });
-    }
+                $('#loadingAlert').hide();
+            }).catch(error => {
+                console.error('Failed to load data:', error);
+                $('#loadingAlert').hide();
+                $('#noBooksAlert').show();
+            });
+        }
 
-    function populateFilter(selector, data, displayProperty) {
-        $(selector).empty();
-        $(selector).append('<option value="">All</option>');
+        function populateFilter(selector, data, displayProperty) {
+            $(selector).empty();
+            $(selector).append('<option value="">All</option>');
 
-        data.forEach(item => {
-            $(selector).append(`<option value="${item[displayProperty]}">${item[displayProperty]}</option>`);
-        });
-    }
+            data.forEach(item => {
+                $(selector).append(`<option value="${item[displayProperty]}">${item[displayProperty]}</option>`);
+            });
+        }
 
-    function displayBooks(books) {
-        const container = $('#booksContainer');
-        container.empty();
+        function displayBooks(books) {
+            const container = $('#booksContainer');
+            container.empty();
 
-        books.forEach(book => {
-            const stockStatus = getStockStatus(book.bookQuantity);
-            const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
+            books.forEach(book => {
+                const stockStatus = getStockStatus(book.bookQuantity);
+                const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
 
-            const priceDisplay = hasDiscount ?
-                `<span class="original-price">$${book.bookPrice.toFixed(2)}</span>
-                 <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>` :
-                `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
+                const priceDisplay = hasDiscount ?
+                    `<span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                     <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>` :
+                    `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
 
-            const countdown = hasDiscount ?
-                `<div class="sale-countdown mt-2" data-end="${new Date(book.saleEndDate).getTime()}">
-                 <small class="text-danger">Sale ends in: <span class="countdown-timer"></span></small>
-             </div>` : '';
+                const countdown = hasDiscount ?
+                    `<div class="sale-countdown mt-2" data-end="${new Date(book.saleEndDate).getTime()}">
+                     <small class="text-danger">Sale ends in: <span class="countdown-timer"></span></small>
+                 </div>` : '';
 
-            const saleBadge = hasDiscount ?
-                `<span class="sale-badge badge bg-danger">SALE</span>` : '';
+                const saleBadge = hasDiscount ?
+                    `<span class="sale-badge badge bg-danger">SALE</span>` : '';
 
-            const card = `
-            <div class="col-md-4 col-lg-3 mb-4">
-                <div class="card book-card h-100">
-                    ${saleBadge}
-                    ${book.bookImage ?
-                `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}">` :
-                `<div class="book-image card-img-top d-flex align-items-center justify-content-center bg-light">
-                            <i class="fas fa-book fa-3x text-muted"></i>
-                         </div>`
-            }
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">${book.bookTitle}</h5>
-                        <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
-                        <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
-                        <div class="mt-auto">
-                            <div class="price-section">
-                                ${priceDisplay}
-                            </div>
-                            ${countdown}
-                            <p class="stock-info ${stockStatus.class}">
-                                <i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}
-                            </p>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary view-details-btn" data-id="${book.bookId}">
-                                    <i class="fas fa-info-circle me-1"></i> Details
-                                </button>
-                                ${book.bookQuantity > 0 ?
-                `<button class="btn btn-primary add-to-cart-btn" data-id="${book.bookId}">
-                                        <i class="fas fa-cart-plus me-1"></i> Add to Cart
-                                    </button>` :
-                `<button class="btn btn-secondary" disabled>Out of Stock</button>`
-            }
+                const card = `
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="card book-card h-100">
+                        ${saleBadge}
+                        ${book.bookImage ?
+                    `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}">` :
+                    `<div class="book-image card-img-top d-flex align-items-center justify-content-center bg-light">
+                                <i class="fas fa-book fa-3x text-muted"></i>
+                             </div>`
+                }
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">${book.bookTitle}</h5>
+                            <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
+                            <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
+                            <div class="mt-auto">
+                                <div class="price-section">
+                                    ${priceDisplay}
+                                </div>
+                                ${countdown}
+                                <p class="stock-info ${stockStatus.class}">
+                                    <i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary view-details-btn" data-id="${book.bookId}">
+                                        <i class="fas fa-info-circle me-1"></i> Details
+                                    </button>
+                                    ${book.bookQuantity > 0 ?
+                    `<button class="btn btn-primary add-to-cart-btn" data-id="${book.bookId}">
+                                            <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                                        </button>` :
+                    `<button class="btn btn-secondary" disabled>Out of Stock</button>`
+                }
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-            container.append(card);
-        });
+            `;
+                container.append(card);
+            });
 
-        // Initialize countdown timers
-        initializeCountdowns();
-    }
+            // Initialize countdown timers
+            initializeCountdowns();
+        }
 
-    function initializeCountdowns() {
-        $('.sale-countdown').each(function() {
-            const endTime = $(this).data('end');
-            const countdownElement = $(this).find('.countdown-timer');
+        function initializeCountdowns() {
+            $('.sale-countdown').each(function() {
+                const endTime = $(this).data('end');
+                const countdownElement = $(this).find('.countdown-timer');
 
-            function updateCountdown() {
-                const now = new Date().getTime();
-                const distance = endTime - now;
+                function updateCountdown() {
+                    const now = new Date().getTime();
+                    const distance = endTime - now;
 
-                if (distance < 0) {
-                    countdownElement.text('Sale ended');
-                    return;
+                    if (distance < 0) {
+                        countdownElement.text('Sale ended');
+                        return;
+                    }
+
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    countdownElement.text(`${days}d ${hours}h ${minutes}m ${seconds}s`);
                 }
 
-                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                countdownElement.text(`${days}d ${hours}h ${minutes}m ${seconds}s`);
-            }
-
-            updateCountdown();
-            setInterval(updateCountdown, 1000);
-        });
-    }
-
-    function getStockStatus(quantity) {
-        if (quantity === 0) {
-            return { text: 'Out of Stock', class: 'out-of-stock', icon: 'fa-times-circle' };
-        } else if (quantity < 5) {
-            return { text: `Only ${quantity} left`, class: 'low-stock', icon: 'fa-exclamation-triangle' };
-        } else {
-            return { text: 'In Stock', class: 'in-stock', icon: 'fa-check-circle' };
-        }
-    }
-
-    function showBookDetails(bookId) {
-        const book = allBooks.find(b => b.bookId === bookId);
-        if (!book) return;
-
-        const stockStatus = getStockStatus(book.bookQuantity);
-        const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
-
-        // Display both prices if discounted
-        if (hasDiscount) {
-            $('#detailsPrice').html(`
-                <span class="original-price">$${book.bookPrice.toFixed(2)}</span>
-                <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>
-            `);
-        } else {
-            $('#detailsPrice').html(`<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`);
-        }
-
-        $('#detailsImage').attr('src', book.bookImage || 'https://via.placeholder.com/300x400?text=No+Image');
-        $('#detailsTitle').text(book.bookTitle);
-        $('#detailsAuthor').text(`by ${book.bookAuthor?.authorName || 'Unknown Author'}`);
-        $('#detailsDescription').text(book.bookDescription || 'No description available.');
-        $('#detailsCategory').text(book.bookCategory?.categoryName || 'Unknown');
-        $('#detailsPublisher').text(book.bookPublisher?.publisherName || 'Unknown');
-        $('#detailsQuantity').text(book.bookQuantity);
-        $('#detailsStock').html(`<span class="${stockStatus.class}"><i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}</span>`);
-
-        // Set up add to cart button in modal
-        $('#addToCartModalBtn').off('click').on('click', function() {
-            const quantity = parseInt($('#quantityInput').val()) || 1;
-            addToCart(bookId, quantity);
-            $('#bookDetailsModal').modal('hide');
-        });
-
-        // Enable/disable add to cart button based on stock
-        if (book.bookQuantity === 0) {
-            $('#addToCartModalBtn').prop('disabled', true).text('Out of Stock');
-            $('#quantityInput').prop('disabled', true);
-        } else {
-            $('#addToCartModalBtn').prop('disabled', false).text('Add to Cart');
-            $('#quantityInput').prop('disabled', false)
-                .attr('max', book.bookQuantity)
-                .val(1);
-        }
-
-        $('#bookDetailsModal').modal('show');
-    }
-
-    function filterBooks() {
-        const searchTerm = $('#searchInput').val().toLowerCase();
-        const categoryFilter = $('#categoryFilter').val();
-        const authorFilter = $('#authorFilter').val();
-        const sortOption = $('#sortSelect').val();
-
-        let filteredBooks = allBooks;
-
-        // Apply search filter
-        if (searchTerm) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookTitle.toLowerCase().includes(searchTerm) ||
-                (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
-                (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
-            );
-        }
-
-        // Apply category filter
-        if (categoryFilter) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookCategory?.categoryName === categoryFilter
-            );
-        }
-
-        // Apply author filter
-        if (authorFilter) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookAuthor?.authorName === authorFilter
-            );
-        }
-
-        // Apply sorting
-        filteredBooks = sortBooks(filteredBooks, sortOption);
-
-        // Reset displayed books count
-        displayedBooks = 12;
-
-        // Clear and display filtered books
-        $('#booksContainer').empty();
-        displayBooks(filteredBooks.slice(0, displayedBooks));
-
-        // Show/hide load more button
-        if (filteredBooks.length > displayedBooks) {
-            $('#loadMoreContainer').show();
-        } else {
-            $('#loadMoreContainer').hide();
-        }
-
-        // Show no results message if needed
-        if (filteredBooks.length === 0) {
-            $('#noBooksAlert').show();
-        } else {
-            $('#noBooksAlert').hide();
-        }
-    }
-
-    function sortBooks(books, sortOption) {
-        switch(sortOption) {
-            case 'title':
-                return books.sort((a, b) => a.bookTitle.localeCompare(b.bookTitle));
-            case 'title_desc':
-                return books.sort((a, b) => b.bookTitle.localeCompare(a.bookTitle));
-            case 'author':
-                return books.sort((a, b) => {
-                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
-                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
-                    return authorA.localeCompare(authorB);
-                });
-            case 'author_desc':
-                return books.sort((a, b) => {
-                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
-                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
-                    return authorB.localeCompare(authorA);
-                });
-            case 'category':
-                return books.sort((a, b) => {
-                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
-                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
-                    return categoryA.localeCompare(categoryB);
-                });
-            case 'category_desc':
-                return books.sort((a, b) => {
-                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
-                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
-                    return categoryB.localeCompare(categoryA);
-                });
-            case 'price_low':
-                return books.sort((a, b) => a.bookPrice - b.bookPrice);
-            case 'price_high':
-                return books.sort((a, b) => b.bookPrice - a.bookPrice);
-            default:
-                return books;
-        }
-    }
-
-    function clearFilters() {
-        $('#searchInput').val('');
-        $('#categoryFilter').val('');
-        $('#authorFilter').val('');
-        $('#sortSelect').val('title');
-        filterBooks();
-    }
-
-    function loadMoreBooks() {
-        const searchTerm = $('#searchInput').val().toLowerCase();
-        const categoryFilter = $('#categoryFilter').val();
-        const authorFilter = $('#authorFilter').val();
-        const sortOption = $('#sortSelect').val();
-
-        let filteredBooks = allBooks;
-
-        if (searchTerm) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookTitle.toLowerCase().includes(searchTerm) ||
-                (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
-                (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
-            );
-        }
-
-        if (categoryFilter) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookCategory?.categoryName === categoryFilter
-            );
-        }
-
-        if (authorFilter) {
-            filteredBooks = filteredBooks.filter(book =>
-                book.bookAuthor?.authorName === authorFilter
-            );
-        }
-
-        // Apply sorting
-        filteredBooks = sortBooks(filteredBooks, sortOption);
-
-        displayedBooks += 12;
-        displayBooks(filteredBooks.slice(0, displayedBooks));
-
-        if (filteredBooks.length <= displayedBooks) {
-            $('#loadMoreContainer').hide();
-        }
-    }
-
-    function addToCart(bookId, quantity) {
-        const book = allBooks.find(b => b.bookId === bookId);
-        if (!book) return;
-
-        // Use discounted price if available, otherwise use regular price
-        const effectivePrice = (book.discountedPrice !== null && book.discountedPrice !== undefined)
-            ? book.discountedPrice
-            : book.bookPrice;
-
-        // Check if book is already in cart
-        const existingItemIndex = cart.findIndex(item => item.bookId === bookId);
-
-        if (existingItemIndex >= 0) {
-            // Update quantity if already in cart
-            const newQuantity = cart[existingItemIndex].quantity + quantity;
-
-            // Check if requested quantity exceeds available stock
-            if (newQuantity > book.bookQuantity) {
-                alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
-                return;
-            }
-
-            cart[existingItemIndex].quantity = newQuantity;
-        } else {
-            // Add new item to cart
-            if (quantity > book.bookQuantity) {
-                alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
-                return;
-            }
-
-            cart.push({
-                bookId: book.bookId,
-                title: book.bookTitle,
-                price: effectivePrice,  // Use the correct price (discounted if available)
-                image: book.bookImage,
-                author: book.bookAuthor?.authorName || 'Unknown Author',
-                quantity: quantity,
-                maxQuantity: book.bookQuantity
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
             });
         }
 
-        // Save cart to localStorage
-        localStorage.setItem(cartKey, JSON.stringify(cart));
+        function getStockStatus(quantity) {
+            if (quantity === 0) {
+                return { text: 'Out of Stock', class: 'out-of-stock', icon: 'fa-times-circle' };
+            } else if (quantity < 5) {
+                return { text: `Only ${quantity} left`, class: 'low-stock', icon: 'fa-exclamation-triangle' };
+            } else {
+                return { text: 'In Stock', class: 'in-stock', icon: 'fa-check-circle' };
+            }
+        }
 
-        // Update cart count
-        updateCartCount();
+        function showBookDetails(bookId) {
+            const book = allBooks.find(b => b.bookId === bookId);
+            if (!book) return;
 
-        // Show success message
-        alert(`Added "${book.bookTitle}" to cart at $${effectivePrice.toFixed(2)} each!`);
-    }
+            const stockStatus = getStockStatus(book.bookQuantity);
+            const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
 
-    function updateCartCount() {
-        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
-        $('#cartCount').text(totalItems);
-    }
+            // Display both prices if discounted
+            if (hasDiscount) {
+                $('#detailsPrice').html(`
+                    <span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                    <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>
+                `);
+            } else {
+                $('#detailsPrice').html(`<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`);
+            }
 
-    function showCart() {
-        const cartItemsList = $('#cartItemsList');
-        cartItemsList.empty();
+            $('#detailsImage').attr('src', book.bookImage || 'https://via.placeholder.com/300x400?text=No+Image');
+            $('#detailsTitle').text(book.bookTitle);
+            $('#detailsAuthor').text(`by ${book.bookAuthor?.authorName || 'Unknown Author'}`);
+            $('#detailsDescription').text(book.bookDescription || 'No description available.');
+            $('#detailsCategory').text(book.bookCategory?.categoryName || 'Unknown');
+            $('#detailsPublisher').text(book.bookPublisher?.publisherName || 'Unknown');
+            $('#detailsQuantity').text(book.bookQuantity);
+            $('#detailsStock').html(`<span class="${stockStatus.class}"><i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}</span>`);
 
-        if (cart.length === 0) {
-            $('#emptyCartMessage').show();
-            $('#cartItemsContainer').hide();
-            $('#checkoutBtn').prop('disabled', true);
-        } else {
-            $('#emptyCartMessage').hide();
-            $('#cartItemsContainer').show();
-            $('#checkoutBtn').prop('disabled', false);
+            // Set up add to cart button in modal
+            $('#addToCartModalBtn').off('click').on('click', function() {
+                const quantity = parseInt($('#quantityInput').val()) || 1;
+                addToCart(bookId, quantity);
+                $('#bookDetailsModal').modal('hide');
+            });
 
-            let total = 0;
+            // Enable/disable add to cart button based on stock
+            if (book.bookQuantity === 0) {
+                $('#addToCartModalBtn').prop('disabled', true).text('Out of Stock');
+                $('#quantityInput').prop('disabled', true);
+            } else {
+                $('#addToCartModalBtn').prop('disabled', false).text('Add to Cart');
+                $('#quantityInput').prop('disabled', false)
+                    .attr('max', book.bookQuantity)
+                    .val(1);
+            }
 
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                total += itemTotal;
+            $('#bookDetailsModal').modal('show');
+        }
 
-                const row = `
+        function filterBooks() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const categoryFilter = $('#categoryFilter').val();
+            const authorFilter = $('#authorFilter').val();
+            const sortOption = $('#sortSelect').val();
+
+            let filteredBooks = allBooks;
+
+            // Apply search filter
+            if (searchTerm) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookTitle.toLowerCase().includes(searchTerm) ||
+                    (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
+                    (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // Apply category filter
+            if (categoryFilter) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookCategory?.categoryName === categoryFilter
+                );
+            }
+
+            // Apply author filter
+            if (authorFilter) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookAuthor?.authorName === authorFilter
+                );
+            }
+
+            // Apply sorting
+            filteredBooks = sortBooks(filteredBooks, sortOption);
+
+            // Reset displayed books count
+            displayedBooks = 12;
+
+            // Clear and display filtered books
+            $('#booksContainer').empty();
+            displayBooks(filteredBooks.slice(0, displayedBooks));
+
+            // Show/hide load more button
+            if (filteredBooks.length > displayedBooks) {
+                $('#loadMoreContainer').show();
+            } else {
+                $('#loadMoreContainer').hide();
+            }
+
+            // Show no results message if needed
+            if (filteredBooks.length === 0) {
+                $('#noBooksAlert').show();
+            } else {
+                $('#noBooksAlert').hide();
+            }
+        }
+
+        function sortBooks(books, sortOption) {
+            switch(sortOption) {
+                case 'title':
+                    return books.sort((a, b) => a.bookTitle.localeCompare(b.bookTitle));
+                case 'title_desc':
+                    return books.sort((a, b) => b.bookTitle.localeCompare(a.bookTitle));
+                case 'author':
+                    return books.sort((a, b) => {
+                        const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                        const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                        return authorA.localeCompare(authorB);
+                    });
+                case 'author_desc':
+                    return books.sort((a, b) => {
+                        const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                        const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                        return authorB.localeCompare(authorA);
+                    });
+                case 'category':
+                    return books.sort((a, b) => {
+                        const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                        const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                        return categoryA.localeCompare(categoryB);
+                    });
+                case 'category_desc':
+                    return books.sort((a, b) => {
+                        const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                        const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                        return categoryB.localeCompare(categoryA);
+                    });
+                case 'price_low':
+                    return books.sort((a, b) => a.bookPrice - b.bookPrice);
+                case 'price_high':
+                    return books.sort((a, b) => b.bookPrice - a.bookPrice);
+                default:
+                    return books;
+            }
+        }
+
+        function clearFilters() {
+            $('#searchInput').val('');
+            $('#categoryFilter').val('');
+            $('#authorFilter').val('');
+            $('#sortSelect').val('title');
+            filterBooks();
+        }
+
+        function loadMoreBooks() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const categoryFilter = $('#categoryFilter').val();
+            const authorFilter = $('#authorFilter').val();
+            const sortOption = $('#sortSelect').val();
+
+            let filteredBooks = allBooks;
+
+            if (searchTerm) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookTitle.toLowerCase().includes(searchTerm) ||
+                    (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
+                    (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (categoryFilter) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookCategory?.categoryName === categoryFilter
+                );
+            }
+
+            if (authorFilter) {
+                filteredBooks = filteredBooks.filter(book =>
+                    book.bookAuthor?.authorName === authorFilter
+                );
+            }
+
+            // Apply sorting
+            filteredBooks = sortBooks(filteredBooks, sortOption);
+
+            displayedBooks += 12;
+            displayBooks(filteredBooks.slice(0, displayedBooks));
+
+            if (filteredBooks.length <= displayedBooks) {
+                $('#loadMoreContainer').hide();
+            }
+        }
+
+        function addToCart(bookId, quantity) {
+            const book = allBooks.find(b => b.bookId === bookId);
+            if (!book) return;
+
+            // Use discounted price if available, otherwise use regular price
+            const effectivePrice = (book.discountedPrice !== null && book.discountedPrice !== undefined)
+                ? book.discountedPrice
+                : book.bookPrice;
+
+            // Check if book is already in cart
+            const existingItemIndex = cart.findIndex(item => item.bookId === bookId);
+
+            if (existingItemIndex >= 0) {
+                // Update quantity if already in cart
+                const newQuantity = cart[existingItemIndex].quantity + quantity;
+
+                // Check if requested quantity exceeds available stock
+                if (newQuantity > book.bookQuantity) {
+                    alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
+                    return;
+                }
+
+                cart[existingItemIndex].quantity = newQuantity;
+            } else {
+                // Add new item to cart
+                if (quantity > book.bookQuantity) {
+                    alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
+                    return;
+                }
+
+                cart.push({
+                    bookId: book.bookId,
+                    title: book.bookTitle,
+                    price: effectivePrice,  // Use the correct price (discounted if available)
+                    image: book.bookImage,
+                    author: book.bookAuthor?.authorName || 'Unknown Author',
+                    quantity: quantity,
+                    maxQuantity: book.bookQuantity
+                });
+            }
+
+            // Save cart to localStorage
+            localStorage.setItem(cartKey, JSON.stringify(cart));
+
+            // Update cart count
+            updateCartCount();
+
+            // Show success message
+            alert(`Added "${book.bookTitle}" to cart at $${effectivePrice.toFixed(2)} each!`);
+        }
+
+        function updateCartCount() {
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            $('#cartCount').text(totalItems);
+        }
+
+        function showCart() {
+            const cartItemsList = $('#cartItemsList');
+            cartItemsList.empty();
+
+            if (cart.length === 0) {
+                $('#emptyCartMessage').show();
+                $('#cartItemsContainer').hide();
+                $('#checkoutBtn').prop('disabled', true);
+            } else {
+                $('#emptyCartMessage').hide();
+                $('#cartItemsContainer').show();
+                $('#checkoutBtn').prop('disabled', false);
+
+                let total = 0;
+
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+
+                    const row = `
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
                                 ${item.image ?
-                    `<img src="${item.image}" style="width: 50px; height: 70px; object-fit: cover;"
-                                         class="me-3" alt="${item.title}"
-                                         onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'">` :
-                    `<div class="me-3" style="width: 50px; height: 70px; background: #f8f9fa;
-                                      display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-book text-muted"></i>
-                                     </div>`
-                }
+                        `<img src="${item.image}" style="width: 50px; height: 70px; object-fit: cover;"
+                                             class="me-3" alt="${item.title}"
+                                             onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'">` :
+                        `<div class="me-3" style="width: 50px; height: 70px; background: #f8f9fa;
+                                          display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-book text-muted"></i>
+                                         </div>`
+                    }
                                 <div>
                                     <div class="fw-bold">${item.title}</div>
                                     <div class="text-muted">by ${item.author}</div>
@@ -889,133 +923,134 @@
                         </td>
                     </tr>
                 `;
-                cartItemsList.append(row);
-            });
+                    cartItemsList.append(row);
+                });
 
-            $('#cartTotal').text(`$${total.toFixed(2)}`);
+                $('#cartTotal').text(`$${total.toFixed(2)}`);
 
-            // Add event listeners to cart buttons
-            $('.increase-quantity').on('click', function() {
-                const bookId = $(this).data('id');
-                updateCartItemQuantity(bookId, 1);
-            });
+                // Add event listeners to cart buttons
+                $('.increase-quantity').on('click', function() {
+                    const bookId = $(this).data('id');
+                    updateCartItemQuantity(bookId, 1);
+                });
 
-            $('.decrease-quantity').on('click', function() {
-                const bookId = $(this).data('id');
-                updateCartItemQuantity(bookId, -1);
-            });
+                $('.decrease-quantity').on('click', function() {
+                    const bookId = $(this).data('id');
+                    updateCartItemQuantity(bookId, -1);
+                });
 
-            $('.remove-from-cart').on('click', function() {
-                const bookId = $(this).data('id');
+                $('.remove-from-cart').on('click', function() {
+                    const bookId = $(this).data('id');
+                    removeFromCart(bookId);
+                });
+            }
+
+            $('#cartModal').modal('show');
+        }
+
+        function updateCartItemQuantity(bookId, change) {
+            const itemIndex = cart.findIndex(item => item.bookId === bookId);
+            if (itemIndex === -1) return;
+
+            const newQuantity = cart[itemIndex].quantity + change;
+
+            // Check if new quantity is valid
+            if (newQuantity < 1) {
                 removeFromCart(bookId);
-            });
+                return;
+            }
+
+            // Check if new quantity exceeds available stock
+            if (newQuantity > cart[itemIndex].maxQuantity) {
+                alert(`Cannot add more than available stock. Only ${cart[itemIndex].maxQuantity} available.`);
+                return;
+            }
+
+            cart[itemIndex].quantity = newQuantity;
+            localStorage.setItem(cartKey, JSON.stringify(cart));
+            updateCartCount();
+            showCart(); // Refresh cart view
         }
 
-        $('#cartModal').modal('show');
-    }
-
-    function updateCartItemQuantity(bookId, change) {
-        const itemIndex = cart.findIndex(item => item.bookId === bookId);
-        if (itemIndex === -1) return;
-
-        const newQuantity = cart[itemIndex].quantity + change;
-
-        // Check if new quantity is valid
-        if (newQuantity < 1) {
-            removeFromCart(bookId);
-            return;
+        function removeFromCart(bookId) {
+            cart = cart.filter(item => item.bookId !== bookId);
+            localStorage.setItem(cartKey, JSON.stringify(cart));
+            updateCartCount();
+            showCart(); // Refresh cart view
         }
 
-        // Check if new quantity exceeds available stock
-        if (newQuantity > cart[itemIndex].maxQuantity) {
-            alert(`Cannot add more than available stock. Only ${cart[itemIndex].maxQuantity} available.`);
-            return;
-        }
+        function showCheckout() {
+            // Build order summary
+            let summaryHTML = '';
+            let total = 0;
 
-        cart[itemIndex].quantity = newQuantity;
-        localStorage.setItem(cartKey, JSON.stringify(cart));
-        updateCartCount();
-        showCart(); // Refresh cart view
-    }
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
 
-    function removeFromCart(bookId) {
-        cart = cart.filter(item => item.bookId !== bookId);
-        localStorage.setItem(cartKey, JSON.stringify(cart));
-        updateCartCount();
-        showCart(); // Refresh cart view
-    }
-
-    function showCheckout() {
-        // Build order summary
-        let summaryHTML = '';
-        let total = 0;
-
-        cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            total += itemTotal;
-
-            summaryHTML += `
+                summaryHTML += `
                 <div class="d-flex justify-content-between">
                     <div>${item.title} x${item.quantity}</div>
                     <div>$${itemTotal.toFixed(2)}</div>
                 </div>
             `;
-        });
+            });
 
-        $('#checkoutSummary').html(summaryHTML);
-        $('#checkoutTotal').text(`$${total.toFixed(2)}`);
+            $('#checkoutSummary').html(summaryHTML);
+            $('#checkoutTotal').text(`$${total.toFixed(2)}`);
 
-        // Show checkout modal
-        $('#cartModal').modal('hide');
-        $('#checkoutModal').modal('show');
-    }
-
-    function processPayment() {
-        if ($('#creditCard').is(':checked')) {
-            const cardNumber = $('#cardNumber').val();
-            const expiryDate = $('#expiryDate').val();
-            const cvv = $('#cvv').val();
-            const cardholderName = $('#cardholderName').val();
-            if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
-                alert('Please fill in all credit card details');
-                return;
-            }
-            if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
-                alert('Please enter a valid card number');
-                return;
-            }
+            // Show checkout modal
+            $('#cartModal').modal('hide');
+            $('#checkoutModal').modal('show');
         }
 
-        $('#confirmPaymentBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+        function processPayment() {
+            if ($('#creditCard').is(':checked')) {
+                const cardNumber = $('#cardNumber').val();
+                const expiryDate = $('#expiryDate').val();
+                const cvv = $('#cvv').val();
+                const cardholderName = $('#cardholderName').val();
+                if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+                    alert('Please fill in all credit card details');
+                    return;
+                }
+                if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
+                    alert('Please enter a valid card number');
+                    return;
+                }
+            }
 
-        // Prepare purchase requests
-        const purchaseRequests = cart.map(item => ({
-            bookId: item.bookId,
-            quantity: item.quantity
-        }));
+            $('#confirmPaymentBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
-        // Make API call to process the order
-        makeApiCall('/api/v1/orders/place', 'POST', purchaseRequests)
-            .then(order => {
-                console.log("Order placed:", order);
+            // Prepare purchase requests
+            const purchaseRequests = cart.map(item => ({
+                bookId: item.bookId,
+                quantity: item.quantity
+            }));
 
-                $('#orderId').text("#" + order.id);
+            // Make API call to process the order
+            makeApiCall('/api/v1/orders/place', 'POST', purchaseRequests)
+                .then(order => {
+                    console.log("Order placed:", order);
 
-                // Clear cart
-                cart = [];
-                localStorage.removeItem(cartKey);
-                updateCartCount();
+                    $('#orderId').text("#" + order.id);
 
-                $('#checkoutModal').modal('hide');
-                $('#paymentSuccessModal').modal('show');
-            })
-            .catch(err => {
-                alert("Error: " + (err.responseJSON?.message || 'Failed to process order'));
-            })
-            .finally(() => {
-                $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
-            });
-    }
+                    // Clear cart
+                    cart = [];
+                    localStorage.removeItem(cartKey);
+                    updateCartCount();
+
+                    $('#checkoutModal').modal('hide');
+                    $('#paymentSuccessModal').modal('show');
+                })
+                .catch(err => {
+                    alert("Error: " + (err.responseJSON?.message || 'Failed to process order'));
+                })
+                .finally(() => {
+                    $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
+                });
+        }
+    });
 </script>
 </body>
 </html>
