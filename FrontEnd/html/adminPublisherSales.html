@@ -6,6 +6,8 @@
     <title>Manage Publisher Sales - LosLibros</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
         body {
             display: none;
@@ -242,6 +244,8 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../js/api.js"></script>
 <script>
     let currentSaleId = null;
@@ -303,8 +307,14 @@
                 localStorage.setItem('role', userRole);
 
                 if (userRole !== 'ADMIN') {
-                    alert('Access denied. You need admin privileges to access this page.');
-                    window.location.href = userRole === 'EMPLOYEE' ? 'employeeDashboard.html' : 'userDashboard.html';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Access Denied',
+                        text: 'You need admin privileges to access this page.',
+                        confirmButtonColor: '#0d6efd'
+                    }).then(() => {
+                        window.location.href = userRole === 'EMPLOYEE' ? 'employeeDashboard.html' : 'userDashboard.html';
+                    });
                     return;
                 }
 
@@ -315,8 +325,14 @@
             })
             .catch(error => {
                 console.error('Failed to verify user role:', error);
-                alert('Failed to verify user permissions. Please login again.');
-                window.location.href = 'signIn.html';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Authentication Error',
+                    text: 'Failed to verify user permissions. Please login again.',
+                    confirmButtonColor: '#0d6efd'
+                }).then(() => {
+                    window.location.href = 'signIn.html';
+                });
             });
     }
 
@@ -333,7 +349,12 @@
             })
             .catch(error => {
                 console.error('Failed to load publishers:', error);
-                alert('Failed to load publishers. Please refresh the page.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Load Error',
+                    text: 'Failed to load publishers. Please refresh the page.',
+                    confirmButtonColor: '#0d6efd'
+                });
             });
     }
 
@@ -348,20 +369,34 @@
         const endDate = new Date($('#endDate').val());
 
         if (endDate <= startDate) {
-            alert('End date must be after start date');
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Date',
+                text: 'End date must be after start date',
+                confirmButtonColor: '#0d6efd'
+            });
             return;
         }
 
         if (startDate < new Date()) {
-            alert('Start date cannot be in the past');
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Date',
+                text: 'Start date cannot be in the past',
+                confirmButtonColor: '#0d6efd'
+            });
             return;
         }
 
         if (!publisherId || !saleDescription || !discountPercentage || !startDate || !endDate) {
-            alert('Please fill in all required fields');
+            Swal.fire({
+                icon: 'error',
+                title: 'Missing Information',
+                text: 'Please fill in all required fields',
+                confirmButtonColor: '#0d6efd'
+            });
             return;
         }
-
 
         const saleData = {
             publisherId: parseInt(publisherId),
@@ -373,13 +408,23 @@
 
         makeApiCall('/api/v1/sales', 'POST', saleData)
             .then(sale => {
-                alert('Sale created successfully!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Sale created successfully!',
+                    confirmButtonColor: '#0d6efd'
+                });
                 $('#saleForm')[0].reset();
                 loadSales();
             })
             .catch(error => {
                 console.error('Failed to create sale:', error);
-                alert('Failed to create sale: ' + error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Create Failed',
+                    text: 'Failed to create sale: ' + error,
+                    confirmButtonColor: '#0d6efd'
+                });
             });
     }
 
@@ -408,7 +453,12 @@
             })
             .catch(error => {
                 console.error('Failed to load sales:', error);
-                alert('Failed to load sales. Please refresh the page.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Load Error',
+                    text: 'Failed to load sales. Please refresh the page.',
+                    confirmButtonColor: '#0d6efd'
+                });
             });
     }
 
@@ -516,7 +566,12 @@
             })
             .catch(error => {
                 console.error('Failed to get sale details:', error);
-                alert('Failed to get sale details. Please try again.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to get sale details. Please try again.',
+                    confirmButtonColor: '#0d6efd'
+                });
             });
     }
 
@@ -525,13 +580,23 @@
 
         makeApiCall(`/api/v1/sales/${currentSaleId}`, 'DELETE')
             .then(() => {
-                alert('Sale deleted successfully!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: 'Sale deleted successfully!',
+                    confirmButtonColor: '#0d6efd'
+                });
                 $('#deleteModal').modal('hide');
                 loadSales();
             })
             .catch(error => {
                 console.error('Failed to delete sale:', error);
-                alert('Failed to delete sale: ' + error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Delete Failed',
+                    text: 'Failed to delete sale: ' + error,
+                    confirmButtonColor: '#0d6efd'
+                });
             });
     }
 
