@@ -8,6 +8,7 @@ import lk.ijse.gdse71.loslibros.util.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,4 +102,22 @@ public class AuthController {
                     .body(new ApiResponse(500, "Server error", null));
         }
     }
+
+    @PostMapping("/admin/create-user")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> createUserByAdmin(@RequestBody RegisterDTO registerDTO) {
+        try {
+            String result = authService.registerByAdmin(registerDTO);
+            return ResponseEntity.ok(new ApiResponse(200, "User created successfully", result));
+        } catch (RuntimeException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(400, e.getMessage(), null));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(500, "Server error", null));
+        }
+    }
+
 }

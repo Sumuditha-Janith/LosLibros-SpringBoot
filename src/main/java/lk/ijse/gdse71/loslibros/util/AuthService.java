@@ -7,6 +7,8 @@ import lk.ijse.gdse71.loslibros.entity.Role;
 import lk.ijse.gdse71.loslibros.entity.User;
 import lk.ijse.gdse71.loslibros.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +22,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final OTPService otpService;
     private final EmailService emailService;
+    private final JavaMailSender mailSender;
 
     public AuthResponseDTO authenticate(AuthDTO authDTO) {
         User user = userRepository.findByUsername(authDTO.getUsername())
@@ -95,4 +98,46 @@ public class AuthService {
 
         return "Password reset successfully";
     }
+
+    public String registerByAdmin(RegisterDTO registerDTO) {
+        if (userRepository.existsByUsername(registerDTO.getUsername())) {
+            throw new RuntimeException("Username is already exist");
+        }
+
+        if (userRepository.existsByEmail(registerDTO.getEmail())) {
+            throw new RuntimeException("Email is already registered");
+        }
+
+        // Create user directly without OTP verification for admin actions
+        User user = User.builder()
+                .username(registerDTO.getUsername())
+                .password(passwordEncoder.encode(registerDTO.getPassword()))
+                .address(registerDTO.getAddress())
+                .email(registerDTO.getEmail())
+                .role(Role.valueOf(registerDTO.getRole().toUpperCase()))
+                .build();
+
+        userRepository.save(user);
+
+        // Send welcome email with credentials
+        sendWelcomeEmail(registerDTO.getEmail(), registerDTO.getUsername(), registerDTO.getPassword());
+
+        return "User created successfully by admin";
+    }
+
+    private void sendWelcomeEmail(String email, String username, String password) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("Welcome to LosLibros - Your Account Has Been Created");
+        message.setText("Hello " + username + ",\n\n" +
+                "Your account has been created by an administrator.\n" +
+                "Your login credentials:\n" +
+                "Username: " + username + "\n" +
+                "Password: " + password + "\n\n" +
+                "Please log in and change your password for security.\n\n" +
+                "Thank you,\nLosLibros Team");
+
+        mailSender.send(message);
+    }
+
 }

@@ -23,6 +23,7 @@ public class User {
 
     private String address;
 
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Enumerated(EnumType.STRING)

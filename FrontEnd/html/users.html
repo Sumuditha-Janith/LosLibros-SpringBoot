@@ -24,6 +24,21 @@
         .add-user-btn {
             margin-bottom: 20px;
         }
+        .password-container {
+            position: relative;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 70%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            z-index: 5;
+        }
+        .password-toggle:hover {
+            color: #495057;
+        }
     </style>
 </head>
 <body>
@@ -88,9 +103,12 @@
                         <label for="addEmail" class="form-label">Email *</label>
                         <input type="email" class="form-control" id="addEmail" required>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 password-container">
                         <label for="addPassword" class="form-label">Password *</label>
                         <input type="password" class="form-control" id="addPassword" required>
+                        <span class="password-toggle" onclick="togglePassword('addPassword')">
+                            <i class="fas fa-eye"></i>
+                        </span>
                     </div>
                     <div class="mb-3">
                         <label for="addRole" class="form-label">Role *</label>
@@ -173,33 +191,113 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/api.js"></script>
-<script src="../js/navbar.js"></script>
 <script>
+    // API configuration
+    const API_BASE_URL = 'http://localhost:8080';
+
+    function getAuthHeaders(contentType = 'application/json') {
+        const token = localStorage.getItem('token');
+        const headers = {
+            'Authorization': 'Bearer ' + token
+        };
+
+        if (contentType) {
+            headers['Content-Type'] = contentType;
+        }
+
+        return headers;
+    }
+
+    function handleApiError(xhr) {
+        if (xhr.status === 401) {
+            alert('Session expired. Please login again.');
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'signIn.html';
+            return true;
+        } else if (xhr.status === 403) {
+            alert('Access denied. You do not have permission to perform this action.');
+            return true;
+        } else if (xhr.status === 404) {
+            alert('Requested resource not found.');
+            return true;
+        } else if (xhr.status >= 500) {
+            alert('Server error. Please try again later.');
+            return true;
+        }
+        return false;
+    }
+
+    function makeApiCall(url, method, data = null, isText = false) {
+        return new Promise((resolve, reject) => {
+            const contentType = isText ? 'text/plain' : 'application/json';
+            const config = {
+                url: API_BASE_URL + url,
+                method: method,
+                headers: getAuthHeaders(contentType),
+                success: function(response) {
+                    resolve(response);
+                },
+                error: function(xhr) {
+                    if (!handleApiError(xhr)) {
+                        const errorMsg = xhr.responseJSON?.message || 'An error occurred';
+                        reject(errorMsg);
+                    }
+                }
+            };
+
+            if (data) {
+                config.data = isText ? data : JSON.stringify(data);
+            }
+
+            $.ajax(config);
+        });
+    }
+
+    // Function to toggle password visibility
+    function togglePassword(inputId) {
+        const passwordInput = document.getElementById(inputId);
+        const toggleIcon = document.querySelector(`[onclick="togglePassword('${inputId}')"] i`);
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    }
+
     let currentUserId = null;
     let allUsers = [];
 
     $(document).ready(function() {
-        const token = localStorage.getItem('token');
-        const role = localStorage.getItem('role');
+        // Load the navbar
+        $("#navbar-container").load("navbar.html", function() {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
 
-        if (!token || role !== 'ADMIN') {
-            window.location.href = 'signIn.html';
-            return;
-        }
+            if (!token || role !== 'ADMIN') {
+                window.location.href = 'signIn.html';
+                return;
+            }
 
-        // Show page content
-        $('body').show();
-        $('#userRoleInfo').text(`Role: ${role}`);
+            // Show page content
+            $('body').show();
+            $('#userRoleInfo').text(`Role: ${role}`);
 
-        // Load users data
-        loadUsers();
+            // Load users data
+            loadUsers();
 
-        // Set up event listeners
-        $('#addUserBtn').on('click', showAddModal);
-        $('#createUserBtn').on('click', createUser);
-        $('#saveUserBtn').on('click', saveUser);
-        $('#confirmDeleteBtn').on('click', deleteUser);
+            // Set up event listeners
+            $('#addUserBtn').on('click', showAddModal);
+            $('#createUserBtn').on('click', createUser);
+            $('#saveUserBtn').on('click', saveUser);
+            $('#confirmDeleteBtn').on('click', deleteUser);
+        });
     });
 
     function showAddModal() {
@@ -235,20 +333,38 @@
 
     function createUser() {
         const userData = {
-            username: $('#addUsername').val(),
-            address: $('#addAddress').val(),
-            email: $('#addEmail').val(),
+            username: $('#addUsername').val().trim(),
+            address: $('#addAddress').val().trim(),
+            email: $('#addEmail').val().trim(),
             password: $('#addPassword').val(),
             role: $('#addRole').val()
         };
 
+        // Validation
         if (!userData.username || !userData.email || !userData.password) {
             alert('Please fill in all required fields');
             return;
         }
 
-        // Use the auth register endpoint to create a new user
-        makeApiCall('/auth/register', 'POST', userData)
+        if (userData.username.length < 3) {
+            alert('Username must be at least 3 characters long');
+            return;
+        }
+
+        if (userData.password.length < 6) {
+            alert('Password must be at least 6 characters long');
+            return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+
+        // Use the admin endpoint to create a new user (bypasses OTP)
+        makeApiCall('/auth/admin/create-user', 'POST', userData)
             .then(response => {
                 alert('User created successfully!');
                 $('#addUserModal').modal('hide');
@@ -262,9 +378,9 @@
     function saveUser() {
         const userId = $('#editUserId').val();
         const userData = {
-            username: $('#editUsername').val(),
-            address: $('#editAddress').val(),
-            email: $('#editEmail').val(),
+            username: $('#editUsername').val().trim(),
+            address: $('#editAddress').val().trim(),
+            email: $('#editEmail').val().trim(),
             role: $('#editRole').val()
         };
 
@@ -273,7 +389,14 @@
             return;
         }
 
-        // Update user details and role in a single call
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email)) {
+            alert('Please enter a valid email address');
+            return;
+        }
+
+        // Update user details
         makeApiCall(`/api/v1/users/${userId}`, 'PUT', userData)
             .then(updatedUser => {
                 alert('User updated successfully!');
@@ -335,8 +458,8 @@
                 <tr>
                     <td>${user.id}</td>
                     <td>${user.username}</td>
-                    <td>${user.address}</td>
-                    <td>${user.email}</td>
+                    <td>${user.address || 'N/A'}</td>
+                    <td>${user.email || 'N/A'}</td>
                     <td>
                         <span class="badge ${roleBadgeClass} role-badge">${user.role}</span>
                     </td>
