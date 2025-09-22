@@ -42,6 +42,16 @@
             color: #198754;
             font-size: 1.2rem;
         }
+        .original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 1rem;
+        }
+        .discounted-price {
+            color: #259800;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
         .stock-info {
             font-size: 0.9rem;
         }
@@ -60,6 +70,12 @@
         }
         .sort-dropdown {
             min-width: 200px;
+        }
+        .sale-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
         }
     </style>
 </head>
@@ -156,7 +172,7 @@
                     <div class="col-md-8">
                         <h4 id="detailsTitle"></h4>
                         <p class="text-muted" id="detailsAuthor"></p>
-                        <p class="price-tag" id="detailsPrice"></p>
+                        <div id="detailsPrice"></div>
                         <p id="detailsDescription"></p>
                         <div class="mb-3">
                             <span class="fw-bold">Category: </span>
@@ -227,6 +243,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Checkout Modal -->
@@ -319,9 +336,49 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/api.js"></script>
-<script src="../js/navbar.js"></script>
 <script>
+    // This would be your api.js and navbar.js functionality
+    // For this demo, I'm including a simplified version
+
+    const API_BASE_URL = 'http://localhost:8080';
+
+    function getAuthHeaders(contentType = 'application/json') {
+        const token = localStorage.getItem('token');
+        const headers = {
+            'Authorization': 'Bearer ' + token
+        };
+
+        if (contentType) {
+            headers['Content-Type'] = contentType;
+        }
+
+        return headers;
+    }
+
+    function makeApiCall(url, method, data = null, isText = false) {
+        return new Promise((resolve, reject) => {
+            const contentType = isText ? 'text/plain' : 'application/json';
+            const config = {
+                url: API_BASE_URL + url,
+                method: method,
+                headers: getAuthHeaders(contentType),
+                success: function(response) {
+                    resolve(response);
+                },
+                error: function(xhr) {
+                    console.error('API call failed:', xhr);
+                    reject(xhr);
+                }
+            };
+
+            if (data) {
+                config.data = isText ? data : JSON.stringify(data);
+            }
+
+            $.ajax(config);
+        });
+    }
+
     let allBooks = [];
     let allCategories = [];
     let allAuthors = [];
@@ -363,7 +420,7 @@
         $('#checkoutBtn').on('click', showCheckout);
         $('#confirmPaymentBtn').on('click', processPayment);
 
-        // Add event listeners for book card buttons (missing code)
+        // Add event listeners for book card buttons
         $(document).on('click', '.view-details-btn', function() {
             const bookId = $(this).data('id');
             showBookDetails(bookId);
@@ -437,8 +494,8 @@
             const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
 
             const priceDisplay = hasDiscount ?
-                `<span class="text-decoration-line-through text-muted me-2">$${book.bookPrice.toFixed(2)}</span>
-             <span class="price-tag">$${book.discountedPrice.toFixed(2)}</span>` :
+                `<span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                 <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>` :
                 `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
 
             const countdown = hasDiscount ?
@@ -446,9 +503,13 @@
                  <small class="text-danger">Sale ends in: <span class="countdown-timer"></span></small>
              </div>` : '';
 
+            const saleBadge = hasDiscount ?
+                `<span class="sale-badge badge bg-danger">SALE</span>` : '';
+
             const card = `
             <div class="col-md-4 col-lg-3 mb-4">
                 <div class="card book-card h-100">
+                    ${saleBadge}
                     ${book.bookImage ?
                 `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}">` :
                 `<div class="book-image card-img-top d-flex align-items-center justify-content-center bg-light">
@@ -460,7 +521,7 @@
                         <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
                         <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
                         <div class="mt-auto">
-                            <div class="price-tag">
+                            <div class="price-section">
                                 ${priceDisplay}
                             </div>
                             ${countdown}
@@ -532,11 +593,21 @@
         if (!book) return;
 
         const stockStatus = getStockStatus(book.bookQuantity);
+        const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
+
+        // FIX: Display both prices if discounted
+        if (hasDiscount) {
+            $('#detailsPrice').html(`
+                <span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>
+            `);
+        } else {
+            $('#detailsPrice').html(`<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`);
+        }
 
         $('#detailsImage').attr('src', book.bookImage || 'https://via.placeholder.com/300x400?text=No+Image');
         $('#detailsTitle').text(book.bookTitle);
         $('#detailsAuthor').text(`by ${book.bookAuthor?.authorName || 'Unknown Author'}`);
-        $('#detailsPrice').text(`$${book.bookPrice.toFixed(2)}`);
         $('#detailsDescription').text(book.bookDescription || 'No description available.');
         $('#detailsCategory').text(book.bookCategory?.categoryName || 'Unknown');
         $('#detailsPublisher').text(book.bookPublisher?.publisherName || 'Unknown');
@@ -710,6 +781,11 @@
         const book = allBooks.find(b => b.bookId === bookId);
         if (!book) return;
 
+        // FIX: Use discounted price if available, otherwise use regular price
+        const effectivePrice = (book.discountedPrice !== null && book.discountedPrice !== undefined)
+            ? book.discountedPrice
+            : book.bookPrice;
+
         // Check if book is already in cart
         const existingItemIndex = cart.findIndex(item => item.bookId === bookId);
 
@@ -734,7 +810,7 @@
             cart.push({
                 bookId: book.bookId,
                 title: book.bookTitle,
-                price: book.bookPrice,
+                price: effectivePrice,  // Use the correct price (discounted if available)
                 image: book.bookImage,
                 author: book.bookAuthor?.authorName || 'Unknown Author',
                 quantity: quantity,
@@ -749,7 +825,7 @@
         updateCartCount();
 
         // Show success message
-        alert(`Added "${book.bookTitle}" to cart!`);
+        alert(`Added "${book.bookTitle}" to cart at $${effectivePrice.toFixed(2)} each!`);
     }
 
     function updateCartCount() {
@@ -795,7 +871,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td>Rs. ${item.price.toFixed(2)}</td>
+                        <td>$${item.price.toFixed(2)}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-sm btn-outline-secondary decrease-quantity"
@@ -809,7 +885,7 @@
                                 </button>
                             </div>
                         </td>
-                        <td>Rs. ${itemTotal.toFixed(2)}</td>
+                        <td>$${itemTotal.toFixed(2)}</td>
                         <td>
                             <button class="btn btn-sm btn-danger remove-from-cart" data-id="${item.bookId}">
                                 <i class="fas fa-trash"></i>
@@ -916,37 +992,34 @@
 
         $('#confirmPaymentBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
 
-        fetch("http://localhost:8080/api/v1/orders/place", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + localStorage.getItem("token")
-            },
-            body: JSON.stringify(cart.map(item => ({
-                bookId: item.bookId,
-                quantity: item.quantity
-            })))
-        }).then(res => {
-            if (!res.ok) throw new Error("Order failed");
-            return res.json();
-        }).then(order => {
-            console.log("Order placed:", order);
+        // Prepare purchase requests
+        const purchaseRequests = cart.map(item => ({
+            bookId: item.bookId,
+            quantity: item.quantity
+        }));
 
-            $('#orderId').text("#" + order.id);
+        // Make API call to process the order
+        makeApiCall('/api/v1/orders/place', 'POST', purchaseRequests)
+            .then(order => {
+                console.log("Order placed:", order);
 
-            cart = [];
-            localStorage.removeItem(cartKey);
-            updateCartCount();
+                $('#orderId').text("#" + order.id);
 
-            $('#checkoutModal').modal('hide');
-            $('#paymentSuccessModal').modal('show');
-        }).catch(err => {
-            alert("Error: " + err.message);
-        }).finally(() => {
-            $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
-        });
+                // Clear cart
+                cart = [];
+                localStorage.removeItem(cartKey);
+                updateCartCount();
+
+                $('#checkoutModal').modal('hide');
+                $('#paymentSuccessModal').modal('show');
+            })
+            .catch(err => {
+                alert("Error: " + (err.responseJSON?.message || 'Failed to process order'));
+            })
+            .finally(() => {
+                $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
+            });
     }
-
 </script>
 </body>
 </html>
