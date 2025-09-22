@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rate Book - LosLibros</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .rating-stars {
+      font-size: 2rem;
+      color: #ffc107;
+      cursor: pointer;
+    }
+    .review-card {
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 id="bookTitle">Rate This Book</h4>
+        </div>
+        <div class="card-body">
+          <div id="bookInfo" class="mb-4">
+            <!-- Book info will be populated here -->
+          </div>
+
+          <div id="userReviewSection">
+            <h5>Your Review</h5>
+            <div class="mb-3">
+              <label class="form-label">Rating</label>
+              <div class="rating-stars" id="ratingStars">
+                <i class="far fa-star" data-value="1"></i>
+                <i class="far fa-star" data-value="2"></i>
+                <i class="far fa-star" data-value="3"></i>
+                <i class="far fa-star" data-value="4"></i>
+                <i class="far fa-star" data-value="5"></i>
+              </div>
+              <input type="hidden" id="ratingValue" value="0">
+            </div>
+            <div class="mb-3">
+              <label for="reviewComment" class="form-label">Comment</label>
+              <textarea class="form-control" id="reviewComment" rows="4" placeholder="Share your thoughts about this book..."></textarea>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary" id="submitReviewBtn">Submit Review</button>
+              <button class="btn btn-outline-secondary" id="updateReviewBtn" style="display: none;">Update Review</button>
+              <button class="btn btn-outline-danger" id="deleteReviewBtn" style="display: none;">Delete Review</button>
+              <button class="btn btn-secondary" id="cancelReviewBtn" style="display: none;">Cancel</button>
+            </div>
+          </div>
+
+          <hr>
+
+          <div id="reviewsSection">
+            <h5>Customer Reviews</h5>
+            <div id="averageRating" class="mb-3">
+              <!-- Average rating will be populated here -->
+            </div>
+            <div id="reviewsList">
+              <!-- Reviews will be populated here -->
+            </div>
+            <div id="noReviews" class="text-center py-4" style="display: none;">
+              <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+              <p>No reviews yet. Be the first to review this book!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  $(document).ready(function() {
+    // Load the navbar
+    $("#navbar-container").load("userNavbar.html");
+
+    const API_BASE_URL = 'http://localhost:8080';
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookId = urlParams.get('bookId');
+    let userReview = null;
+
+    if (!bookId) {
+      alert('No book specified');
+      window.history.back();
+      return;
+    }
+
+    // Get auth headers function
+    function getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      return {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      };
+    }
+
+    // Load book details
+    function loadBookDetails() {
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/books/get/${bookId}`,
+        method: 'GET',
+        headers: getAuthHeaders(),
+        success: function(book) {
+          $('#bookTitle').text(`Rate: ${book.bookTitle}`);
+          $('#bookInfo').html(`
+                        <div class="d-flex">
+                            ${book.bookImage ?
+                  `<img src="${book.bookImage}" style="width: 100px; height: 150px; object-fit: cover;" class="me-3" alt="${book.bookTitle}">` :
+                  `<div style="width: 100px; height: 150px; background: #f8f9fa; display: flex; align-items: center; justify-content: center;" class="me-3">
+                                    <i class="fas fa-book fa-2x text-muted"></i>
+                                </div>`
+          }
+                            <div>
+                                <h5>${book.bookTitle}</h5>
+                                <p class="text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
+                            </div>
+                        </div>
+                    `);
+        },
+        error: function() {
+          alert('Failed to load book details');
+        }
+      });
+    }
+
+    // Load reviews
+    function loadReviews() {
+      // Load average rating
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/book/${bookId}/average`,
+        method: 'GET',
+        success: function(avgRating) {
+          const ratingText = avgRating ?
+                  `Average Rating: ${avgRating.toFixed(1)}/5` :
+                  'No ratings yet';
+          $('#averageRating').html(`
+                        <div class="d-flex align-items-center">
+                            <div class="rating-stars me-2">
+                                ${renderStars(avgRating || 0)}
+                            </div>
+                            <span>${ratingText}</span>
+                        </div>
+                    `);
+        }
+      });
+
+      // Load individual reviews
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/book/${bookId}`,
+        method: 'GET',
+        headers: getAuthHeaders(),
+        success: function(reviews) {
+          const reviewsList = $('#reviewsList');
+          reviewsList.empty();
+
+          if (reviews.length === 0) {
+            $('#noReviews').show();
+            return;
+          }
+
+          $('#noReviews').hide();
+
+          const currentUser = localStorage.getItem('username');
+          const userRole = localStorage.getItem('role');
+
+          reviews.forEach(review => {
+            const isOwnReview = review.username === currentUser;
+            const canDelete = isOwnReview || userRole === 'ADMIN' || userRole === 'EMPLOYEE';
+
+            if (isOwnReview) {
+              userReview = review;
+            }
+
+            const reviewHtml = `
+                            <div class="review-card card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-2">${review.username.charAt(0).toUpperCase()}</div>
+                                            <div>
+                                                <h6 class="mb-0">${review.username}</h6>
+                                                <small class="text-muted">${formatDate(review.createdAt)}</small>
+                                            </div>
+                                        </div>
+                                        <div class="rating-stars">
+                                            ${renderStars(review.rating)}
+                                        </div>
+                                    </div>
+                                    <p class="mb-0">${review.comment || 'No comment provided.'}</p>
+                                    ${canDelete ? `
+                                        <div class="mt-2 text-end">
+                                            ${isOwnReview ? `
+                                                <button class="btn btn-sm btn-outline-primary edit-review" data-id="${review.id}">
+                                                    <i class="fas fa-edit me-1"></i>Edit
+                                                </button>
+                                            ` : ''}
+                                            <button class="btn btn-sm btn-outline-danger delete-review" data-id="${review.id}">
+                                                <i class="fas fa-trash me-1"></i>Delete
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+
+            reviewsList.append(reviewHtml);
+          });
+
+          // Set up event listeners for edit/delete buttons
+          $('.edit-review').on('click', function() {
+            const reviewId = $(this).data('id');
+            editReview(reviewId);
+          });
+
+          $('.delete-review').on('click', function() {
+            const reviewId = $(this).data('id');
+            deleteReview(reviewId);
+          });
+
+          // Update UI based on whether user has already reviewed
+          updateReviewUI();
+        }
+      });
+    }
+
+    // Render stars based on rating
+    function renderStars(rating) {
+      let stars = '';
+      for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+          stars += '<i class="fas fa-star"></i>';
+        } else if (i - 0.5 <= rating) {
+          stars += '<i class="fas fa-star-half-alt"></i>';
+        } else {
+          stars += '<i class="far fa-star"></i>';
+        }
+      }
+      return stars;
+    }
+
+    // Format date
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // Update UI based on user's existing review
+    function updateReviewUI() {
+      if (userReview) {
+        // User has already reviewed this book
+        $('#ratingValue').val(userReview.rating);
+        updateStars(userReview.rating);
+        $('#reviewComment').val(userReview.comment || '');
+
+        $('#submitReviewBtn').hide();
+        $('#updateReviewBtn').show();
+        $('#deleteReviewBtn').show();
+        $('#cancelReviewBtn').show();
+      } else {
+        // User hasn't reviewed yet
+        $('#submitReviewBtn').show();
+        $('#updateReviewBtn').hide();
+        $('#deleteReviewBtn').hide();
+        $('#cancelReviewBtn').hide();
+      }
+    }
+
+    // Star rating interaction
+    $('#ratingStars i').on('mouseenter', function() {
+      const value = $(this).data('value');
+      updateStars(value);
+    });
+
+    $('#ratingStars').on('mouseleave', function() {
+      const currentValue = $('#ratingValue').val();
+      updateStars(currentValue);
+    });
+
+    $('#ratingStars i').on('click', function() {
+      const value = $(this).data('value');
+      $('#ratingValue').val(value);
+      updateStars(value);
+    });
+
+    function updateStars(value) {
+      $('#ratingStars i').each(function() {
+        const starValue = $(this).data('value');
+        if (starValue <= value) {
+          $(this).removeClass('far').addClass('fas');
+        } else {
+          $(this).removeClass('fas').addClass('far');
+        }
+      });
+    }
+
+    // Submit new review
+    $('#submitReviewBtn').on('click', function() {
+      const rating = $('#ratingValue').val();
+      const comment = $('#reviewComment').val().trim();
+
+      if (rating == 0) {
+        alert('Please select a rating');
+        return;
+      }
+
+      const reviewData = {
+        bookId: parseInt(bookId),
+        rating: parseInt(rating),
+        comment: comment
+      };
+
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews`,
+        method: 'POST',
+        headers: getAuthHeaders(),
+        data: JSON.stringify(reviewData),
+        success: function() {
+          alert('Review submitted successfully!');
+          userReview = null; // Reset to trigger reload
+          loadReviews();
+        },
+        error: function(xhr) {
+          alert('Error: ' + (xhr.responseJSON?.message || 'Failed to submit review'));
+        }
+      });
+    });
+
+    // Update existing review
+    $('#updateReviewBtn').on('click', function() {
+      const rating = $('#ratingValue').val();
+      const comment = $('#reviewComment').val().trim();
+
+      if (rating == 0) {
+        alert('Please select a rating');
+        return;
+      }
+
+      const reviewData = {
+        rating: parseInt(rating),
+        comment: comment
+      };
+
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/${userReview.id}`,
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        data: JSON.stringify(reviewData),
+        success: function() {
+          alert('Review updated successfully!');
+          loadReviews();
+        },
+        error: function(xhr) {
+          alert('Error: ' + (xhr.responseJSON?.message || 'Failed to update review'));
+        }
+      });
+    });
+
+    // Delete review
+    $('#deleteReviewBtn').on('click', function() {
+      if (!confirm('Are you sure you want to delete your review?')) {
+        return;
+      }
+
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/${userReview.id}`,
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        success: function() {
+          alert('Review deleted successfully!');
+          userReview = null;
+          $('#ratingValue').val(0);
+          updateStars(0);
+          $('#reviewComment').val('');
+          updateReviewUI();
+          loadReviews();
+        },
+        error: function(xhr) {
+          alert('Error: ' + (xhr.responseJSON?.message || 'Failed to delete review'));
+        }
+      });
+    });
+
+    // Cancel editing
+    $('#cancelReviewBtn').on('click', function() {
+      if (userReview) {
+        $('#ratingValue').val(userReview.rating);
+        updateStars(userReview.rating);
+        $('#reviewComment').val(userReview.comment || '');
+      }
+      updateReviewUI();
+    });
+
+    // Edit review (from reviews list)
+    function editReview(reviewId) {
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/${reviewId}`,
+        method: 'GET',
+        headers: getAuthHeaders(),
+        success: function(review) {
+          userReview = review;
+          $('#ratingValue').val(review.rating);
+          updateStars(review.rating);
+          $('#reviewComment').val(review.comment || '');
+          updateReviewUI();
+
+          // Scroll to review form
+          $('html, body').animate({
+            scrollTop: $('#userReviewSection').offset().top
+          }, 500);
+        }
+      });
+    }
+
+    // Delete review (from reviews list)
+    function deleteReview(reviewId) {
+      if (!confirm('Are you sure you want to delete this review?')) {
+        return;
+      }
+
+      $.ajax({
+        url: `${API_BASE_URL}/api/v1/reviews/${reviewId}`,
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        success: function() {
+          alert('Review deleted successfully!');
+          if (userReview && userReview.id === reviewId) {
+            userReview = null;
+            $('#ratingValue').val(0);
+            updateStars(0);
+            $('#reviewComment').val('');
+            updateReviewUI();
+          }
+          loadReviews();
+        },
+        error: function(xhr) {
+          alert('Error: ' + (xhr.responseJSON?.message || 'Failed to delete review'));
+        }
+      });
+    }
+
+    // Initialize page
+    loadBookDetails();
+    loadReviews();
+  });
+</script>
+</body>
+</html>

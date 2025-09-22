@@ -77,6 +77,14 @@
             right: 10px;
             z-index: 1;
         }
+        .rating-stars {
+            color: #ffc107;
+            font-size: 0.9rem;
+        }
+        .book-rating {
+            margin-top: 5px;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -128,6 +136,7 @@
                     <option value="category_desc">Category (Z-A)</option>
                     <option value="price_low">Price (Low to High)</option>
                     <option value="price_high">Price (High to Low)</option>
+                    <option value="rating">Highest Rated</option>
                 </select>
             </div>
             <div class="col-12">
@@ -168,6 +177,9 @@
                 <div class="row">
                     <div class="col-md-4">
                         <img id="detailsImage" class="img-fluid rounded" src="" alt="Book cover">
+                        <div class="mt-3 text-center" id="bookRatingInfo">
+                            <!-- Rating info will be populated here -->
+                        </div>
                     </div>
                     <div class="col-md-8">
                         <h4 id="detailsTitle"></h4>
@@ -195,8 +207,15 @@
                             <input type="number" class="form-control me-3" id="quantityInput" min="1" value="1" style="width: 80px;">
                             <button class="btn btn-primary" id="addToCartModalBtn">Add to Cart</button>
                         </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-outline-info" id="rateBookBtn">
+                                <i class="fas fa-star me-1"></i> Rate This Book
+                            </button>
+                        </div>
                     </div>
                 </div>
+                <!-- Hidden field to store book ID -->
+                <input type="hidden" id="bookId" value="">
             </div>
         </div>
     </div>
@@ -471,6 +490,14 @@
             }
         });
 
+        // Rate book button
+        $(document).on('click', '#rateBookBtn', function() {
+            const bookId = $('#bookId').val();
+            if (bookId) {
+                window.location.href = `bookRate.html?bookId=${bookId}`;
+            }
+        });
+
         function loadBooksAndDependencies() {
             $('#loadingAlert').show();
 
@@ -490,20 +517,49 @@
                 // Populate author filter
                 populateFilter('#authorFilter', allAuthors, 'authorName');
 
-                // Display books
-                displayBooks(allBooks.slice(0, displayedBooks));
+                // Load ratings for all books
+                loadBookRatings().then(() => {
+                    // Display books
+                    displayBooks(allBooks.slice(0, displayedBooks));
 
-                // Show load more button if there are more books
-                if (allBooks.length > displayedBooks) {
-                    $('#loadMoreContainer').show();
-                }
+                    // Show load more button if there are more books
+                    if (allBooks.length > displayedBooks) {
+                        $('#loadMoreContainer').show();
+                    }
 
-                $('#loadingAlert').hide();
+                    $('#loadingAlert').hide();
+                });
             }).catch(error => {
                 console.error('Failed to load data:', error);
                 $('#loadingAlert').hide();
                 $('#noBooksAlert').show();
             });
+        }
+
+        function loadBookRatings() {
+            const ratingPromises = allBooks.map(book => {
+                return makeApiCall(`/api/v1/reviews/book/${book.bookId}/average`, 'GET')
+                    .then(avgRating => {
+                        book.averageRating = avgRating || 0;
+                        return makeApiCall(`/api/v1/reviews/book/${book.bookId}/count`, 'GET')
+                            .then(count => {
+                                book.reviewCount = count || 0;
+                                return book;
+                            })
+                            .catch(() => {
+                                book.averageRating = 0;
+                                book.reviewCount = 0;
+                                return book;
+                            });
+                    })
+                    .catch(() => {
+                        book.averageRating = 0;
+                        book.reviewCount = 0;
+                        return book;
+                    });
+            });
+
+            return Promise.all(ratingPromises);
         }
 
         function populateFilter(selector, data, displayProperty) {
@@ -536,6 +592,18 @@
                 const saleBadge = hasDiscount ?
                     `<span class="sale-badge badge bg-danger">SALE</span>` : '';
 
+                // Rating display
+                const ratingDisplay = book.averageRating > 0 ?
+                    `<div class="book-rating">
+                        <div class="rating-stars">
+                            ${renderStars(book.averageRating)}
+                        </div>
+                        <small class="text-muted">${book.averageRating.toFixed(1)} (${book.reviewCount} reviews)</small>
+                    </div>` :
+                    `<div class="book-rating">
+                        <small class="text-muted">No ratings yet</small>
+                    </div>`;
+
                 const card = `
                 <div class="col-md-4 col-lg-3 mb-4">
                     <div class="card book-card h-100">
@@ -550,6 +618,7 @@
                             <h5 class="card-title">${book.bookTitle}</h5>
                             <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
                             <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
+                            ${ratingDisplay}
                             <div class="mt-auto">
                                 <div class="price-section">
                                     ${priceDisplay}
@@ -579,6 +648,20 @@
 
             // Initialize countdown timers
             initializeCountdowns();
+        }
+
+        function renderStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<i class="fas fa-star"></i>';
+                } else if (i - 0.5 <= rating) {
+                    stars += '<i class="fas fa-star-half-alt"></i>';
+                } else {
+                    stars += '<i class="far fa-star"></i>';
+                }
+            }
+            return stars;
         }
 
         function initializeCountdowns() {
@@ -644,6 +727,12 @@
             $('#detailsQuantity').text(book.bookQuantity);
             $('#detailsStock').html(`<span class="${stockStatus.class}"><i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}</span>`);
 
+            // Set book ID for rating button
+            $('#bookId').val(book.bookId);
+
+            // Load and display rating info
+            loadBookRatingInfo(book.bookId);
+
             // Set up add to cart button in modal
             $('#addToCartModalBtn').off('click').on('click', function() {
                 const quantity = parseInt($('#quantityInput').val()) || 1;
@@ -663,6 +752,27 @@
             }
 
             $('#bookDetailsModal').modal('show');
+        }
+
+        function loadBookRatingInfo(bookId) {
+            // Load average rating
+            makeApiCall(`/api/v1/reviews/book/${bookId}/average`, 'GET')
+                .then(avgRating => {
+                    return makeApiCall(`/api/v1/reviews/book/${bookId}/count`, 'GET')
+                        .then(count => {
+                            const ratingInfo = avgRating > 0 ?
+                                `<div class="rating-stars" style="font-size: 1.2rem;">
+                                    ${renderStars(avgRating)}
+                                </div>
+                                <div>${avgRating.toFixed(1)}/5 (${count} reviews)</div>` :
+                                `<div class="text-muted">No ratings yet</div>`;
+
+                            $('#bookRatingInfo').html(ratingInfo);
+                        });
+                })
+                .catch(() => {
+                    $('#bookRatingInfo').html('<div class="text-muted">No ratings yet</div>');
+                });
         }
 
         function filterBooks() {
@@ -755,6 +865,8 @@
                     return books.sort((a, b) => a.bookPrice - b.bookPrice);
                 case 'price_high':
                     return books.sort((a, b) => b.bookPrice - a.bookPrice);
+                case 'rating':
+                    return books.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
                 default:
                     return books;
             }
