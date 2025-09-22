@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard - LosLibros</title>
+    <title>Los Libros</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,165 +11,322 @@
             display: none;
             background-color: #f8f9fa;
         }
-        .sidebar {
-            background-color: #343a40;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            padding-top: 20px;
+        .book-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
         }
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 10px 20px;
-            margin: 5px 0;
-        }
-        .sidebar .nav-link:hover {
-            color: white;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar .nav-link.active {
-            color: white;
-            background-color: #0d6efd;
-        }
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-        .dashboard-card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-        }
-        .dashboard-card:hover {
+        .book-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .admin-only { display: none; }
-        .employee-only { display: none; }
-        .user-only { display: block; }
+        .book-image {
+            height: 250px;
+            object-fit: cover;
+            width: 100%;
+        }
+        .cart-badge {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .filter-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .price-tag {
+            font-weight: bold;
+            color: #198754;
+            font-size: 1.2rem;
+        }
+        .original-price {
+            text-decoration: line-through;
+            color: #6c757d;
+            font-size: 1rem;
+        }
+        .discounted-price {
+            color: #259800;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .stock-info {
+            font-size: 0.9rem;
+        }
+        .out-of-stock {
+            color: #dc3545;
+        }
+        .low-stock {
+            color: #fd7e14;
+        }
+        .in-stock {
+            color: #198754;
+        }
+        .book-category {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .sort-dropdown {
+            min-width: 200px;
+        }
+        .sale-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
-<!-- Sidebar -->
-<div class="sidebar">
-    <div class="text-center mb-4">
-        <h4><i class="fas fa-book me-2"></i>LosLibros</h4>
-        <p class="text-muted">User Dashboard</p>
+
+<div class="container" style="margin-top: 80px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Browse Books</h2>
+        <div>
+            <span class="badge bg-primary" id="userRoleInfo"></span>
+            <button class="btn btn-primary position-relative ms-2" id="viewCartBtn">
+                <i class="fas fa-shopping-cart"></i> Cart
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCount">
+                    0
+                </span>
+            </button>
+        </div>
     </div>
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link active" href="userDashboard.html">
-                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="browseBooksUser.html">
-                <i class="fas fa-book me-2"></i>Browse Books
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#">
-                <i class="fas fa-bookmark me-2"></i>My Favorites
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#" id="logoutBtn">
-                <i class="fas fa-sign-out-alt me-2"></i>Logout
-            </a>
-        </li>
-    </ul>
+
+    <!-- Filter and Sort Section -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="searchInput" class="form-label">Search Books</label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by title, author, or category...">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="categoryFilter" class="form-label">Category</label>
+                <select class="form-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <!-- Categories will be populated here -->
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="authorFilter" class="form-label">Author</label>
+                <select class="form-select" id="authorFilter">
+                    <option value="">All Authors</option>
+                    <!-- Authors will be populated here -->
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <label for="sortSelect" class="form-label">Sort By</label>
+                <select class="form-select sort-dropdown" id="sortSelect">
+                    <option value="title">Book Name (A-Z)</option>
+                    <option value="title_desc">Book Name (Z-A)</option>
+                    <option value="author">Author (A-Z)</option>
+                    <option value="author_desc">Author (Z-A)</option>
+                    <option value="category">Category (A-Z)</option>
+                    <option value="category_desc">Category (Z-A)</option>
+                    <option value="price_low">Price (Low to High)</option>
+                    <option value="price_high">Price (High to Low)</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-outline-secondary" id="clearFiltersBtn">
+                    <i class="fas fa-times me-1"></i> Clear All Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info" id="loadingAlert">
+        <i class="fas fa-spinner fa-spin me-2"></i> Loading books...
+    </div>
+
+    <div class="row" id="booksContainer">
+        <!-- Books will be populated here as cards -->
+    </div>
+
+    <div class="alert alert-warning" id="noBooksAlert" style="display: none;">
+        <i class="fas fa-exclamation-circle me-2"></i> No books found matching your criteria.
+    </div>
+
+    <!-- Load More Button -->
+    <div class="text-center mt-4" id="loadMoreContainer" style="display: none;">
+        <button class="btn btn-primary" id="loadMoreBtn">Load More Books</button>
+    </div>
 </div>
 
-<!-- Main Content -->
-<div class="main-content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>User Dashboard</h2>
-        <div>
-            <span class="badge bg-primary" id="userInfo">Welcome, User</span>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card dashboard-card bg-primary text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h5 class="card-title">Books Available</h5>
-                            <h2 class="card-text" id="booksCount">0</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-book fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
+<!-- Book Details Modal -->
+<div class="modal fade" id="bookDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookDetailsTitle">Book Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card dashboard-card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h5 class="card-title">Favorites</h5>
-                            <h2 class="card-text">0</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-heart fa-3x opacity-50"></i>
-                        </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <img id="detailsImage" class="img-fluid rounded" src="" alt="Book cover">
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-4">
-            <div class="card dashboard-card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-grow-1">
-                            <h5 class="card-title">Wishlist</h5>
-                            <h2 class="card-text">0</h2>
+                    <div class="col-md-8">
+                        <h4 id="detailsTitle"></h4>
+                        <p class="text-muted" id="detailsAuthor"></p>
+                        <div id="detailsPrice"></div>
+                        <p id="detailsDescription"></p>
+                        <div class="mb-3">
+                            <span class="fw-bold">Category: </span>
+                            <span id="detailsCategory"></span>
                         </div>
-                        <div>
-                            <i class="fas fa-bookmark fa-3x opacity-50"></i>
+                        <div class="mb-3">
+                            <span class="fw-bold">Publisher: </span>
+                            <span id="detailsPublisher"></span>
+                        </div>
+                        <div class="mb-3 stock-info">
+                            <span class="fw-bold">Available Quantity: </span>
+                            <span id="detailsQuantity"></span>
+                        </div>
+                        <div class="mb-3 stock-info">
+                            <span class="fw-bold">Availability: </span>
+                            <span id="detailsStock"></span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <label for="quantityInput" class="form-label me-2 fw-bold">Quantity:</label>
+                            <input type="number" class="form-control me-3" id="quantityInput" min="1" value="1" style="width: 80px;">
+                            <button class="btn btn-primary" id="addToCartModalBtn">Add to Cart</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Quick Actions</h5>
+<!-- Shopping Cart Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Your Shopping Cart</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="emptyCartMessage" class="text-center py-4">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <p>Your cart is empty</p>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="browseBooksUser.html" class="btn btn-primary">
-                            <i class="fas fa-book me-2"></i>Browse Books
-                        </a>
-                        <button class="btn btn-success">
-                            <i class="fas fa-heart me-2"></i>View Favorites
-                        </button>
-                        <button class="btn btn-warning">
-                            <i class="fas fa-bookmark me-2"></i>View Wishlist
-                        </button>
+                <div id="cartItemsContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody id="cartItemsList">
+                            <!-- Cart items will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <h4>Total: <span id="cartTotal">$0.00</span></h4>
                     </div>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                <button type="button" class="btn btn-primary" id="checkoutBtn" disabled>Proceed to Checkout</button>
+            </div>
         </div>
-        <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Recently Added</h5>
+    </div>
+</div>
+
+<!-- Checkout Modal -->
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Checkout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h5>Order Summary</h5>
+                    <div id="checkoutSummary">
+                        <!-- Order summary will be populated here -->
+                    </div>
+                    <hr>
+                    <h5>Total: <span id="checkoutTotal">$0.00</span></h5>
                 </div>
-                <div class="card-body">
-                    <ul class="list-group list-group-flush" id="recentBooks">
-                        <li class="list-group-item">Loading recent books...</li>
-                    </ul>
+                <div class="mb-3">
+                    <h5>Payment Information</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="creditCard" checked>
+                        <label class="form-check-label" for="creditCard">
+                            Credit Card
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="paypal">
+                        <label class="form-check-label" for="paypal">
+                            PayPal
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="cashOnDelivery">
+                        <label class="form-check-label" for="cashOnDelivery">
+                            Cash on Delivery
+                        </label>
+                    </div>
+                    <div id="creditCardForm">
+                        <div class="mb-3">
+                            <label for="cardNumber" class="form-label">Card Number</label>
+                            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="expiryDate" class="form-label">Expiry Date</label>
+                                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cardholderName" class="form-label">Cardholder Name</label>
+                            <input type="text" class="form-control" id="cardholderName" placeholder="John Doe">
+                        </div>
+                    </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmPaymentBtn">Confirm Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Success Modal -->
+<div class="modal fade" id="paymentSuccessModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-success"><i class="fas fa-check-circle me-2"></i>Payment Successful</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-check-circle fa-5x text-success mb-3"></i>
+                <h4>Thank you for your purchase!</h4>
+                <p>Your order has been placed successfully.</p>
+                <p>Order ID: <span id="orderId" class="fw-bold">#123456</span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Continue Shopping</button>
             </div>
         </div>
     </div>
@@ -177,12 +334,56 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/api.js"></script>
 <script>
-    $(document).ready(function() {
-        // Check authentication
+
+    const API_BASE_URL = 'http://localhost:8080';
+
+    function getAuthHeaders(contentType = 'application/json') {
         const token = localStorage.getItem('token');
-        const username = localStorage.getItem('username');
+        const headers = {
+            'Authorization': 'Bearer ' + token
+        };
+
+        if (contentType) {
+            headers['Content-Type'] = contentType;
+        }
+
+        return headers;
+    }
+
+    function makeApiCall(url, method, data = null, isText = false) {
+        return new Promise((resolve, reject) => {
+            const contentType = isText ? 'text/plain' : 'application/json';
+            const config = {
+                url: API_BASE_URL + url,
+                method: method,
+                headers: getAuthHeaders(contentType),
+                success: function(response) {
+                    resolve(response);
+                },
+                error: function(xhr) {
+                    console.error('API call failed:', xhr);
+                    reject(xhr);
+                }
+            };
+
+            if (data) {
+                config.data = isText ? data : JSON.stringify(data);
+            }
+
+            $.ajax(config);
+        });
+    }
+
+    let allBooks = [];
+    let allCategories = [];
+    let allAuthors = [];
+    let displayedBooks = 12;
+    let cart = [];
+    const cartKey = 'loslibros_cart';
+
+    $(document).ready(function() {
+        const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
 
         if (!token) {
@@ -190,72 +391,630 @@
             return;
         }
 
-        // Show page content but don't load data yet
+        // Show page content
         $('body').show();
-        $('#userInfo').text(`Welcome, ${username} (${role})`);
+        $('#userRoleInfo').text(`Role: ${role}`).hide(); //NO NEED TO SHOW THE ROLE
 
-        // First verify user role from API, then load data
-        verifyUserRoleAndLoadData();
+        // Load cart from localStorage if available
+        const savedCart = localStorage.getItem(cartKey);
+        if (savedCart) {
+            cart = JSON.parse(savedCart);
+            updateCartCount();
+        }
 
-        // Logout functionality
-        $('#logoutBtn').on('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('token');
-            localStorage.removeItem('username');
-            localStorage.removeItem('role');
-            window.location.href = '../index.html';
+        // Load books data and dependencies
+        loadBooksAndDependencies();
+
+        // Set up event listeners
+        $('#searchInput').on('keyup', filterBooks);
+        $('#categoryFilter').on('change', filterBooks);
+        $('#authorFilter').on('change', filterBooks);
+        $('#sortSelect').on('change', filterBooks);
+        $('#clearFiltersBtn').on('click', clearFilters);
+        $('#loadMoreBtn').on('click', loadMoreBooks);
+        $('#viewCartBtn').on('click', showCart);
+        $('#checkoutBtn').on('click', showCheckout);
+        $('#confirmPaymentBtn').on('click', processPayment);
+
+        // Add event listeners for book card buttons
+        $(document).on('click', '.view-details-btn', function() {
+            const bookId = $(this).data('id');
+            showBookDetails(bookId);
+        });
+
+        $(document).on('click', '.add-to-cart-btn', function() {
+            const bookId = $(this).data('id');
+            addToCart(bookId, 1); // Default quantity 1
+        });
+
+        // Payment method toggle
+        $('input[name="paymentMethod"]').on('change', function() {
+            if ($('#creditCard').is(':checked')) {
+                $('#creditCardForm').show();
+            } else {
+                $('#creditCardForm').hide();
+            }
         });
     });
 
-    function verifyUserRoleAndLoadData() {
-        // First get user info from API to verify role - FIXED ENDPOINT
-        makeApiCall('/api/v1/users/info', 'GET')
-            .then(response => {
-                const userRole = response.role;
-                $('#userInfo').text(`Welcome, ${response.username} (${userRole})`);
+    function loadBooksAndDependencies() {
+        $('#loadingAlert').show();
 
-                // Update localStorage with actual role from server
-                localStorage.setItem('role', userRole);
+        // Load books, categories, and authors
+        Promise.all([
+            makeApiCall('/api/v1/books/getAllBooks', 'GET'),
+            makeApiCall('/api/v1/categories/getAllCat', 'GET'),
+            makeApiCall('/api/v1/authors/getAllAuth', 'GET')
+        ]).then(([books, categories, authors]) => {
+            allBooks = books;
+            allCategories = categories;
+            allAuthors = authors;
 
-                // User is confirmed, now load data they can access
-                loadBooks();
-            })
-            .catch(error => {
-                console.error('Failed to verify user role:', error);
-                alert('Failed to verify user permissions. Please login again.');
-                window.location.href = 'signIn.html';
-            });
+            // Populate category filter
+            populateFilter('#categoryFilter', allCategories, 'categoryName');
+
+            // Populate author filter
+            populateFilter('#authorFilter', allAuthors, 'authorName');
+
+            // Display books
+            displayBooks(allBooks.slice(0, displayedBooks));
+
+            // Show load more button if there are more books
+            if (allBooks.length > displayedBooks) {
+                $('#loadMoreContainer').show();
+            }
+
+            $('#loadingAlert').hide();
+        }).catch(error => {
+            console.error('Failed to load data:', error);
+            $('#loadingAlert').hide();
+            $('#noBooksAlert').show();
+        });
     }
 
-    function loadBooks() {
-        makeApiCall('/api/v1/books/getAllBooks', 'GET')
-            .then(books => {
-                $('#booksCount').text(books.length);
-                displayRecentBooks(books);
-            })
-            .catch(error => {
-                console.error('Failed to load books:', error);
-                $('#booksCount').text('Error');
-            });
+    function populateFilter(selector, data, displayProperty) {
+        $(selector).empty();
+        $(selector).append('<option value="">All</option>');
+
+        data.forEach(item => {
+            $(selector).append(`<option value="${item[displayProperty]}">${item[displayProperty]}</option>`);
+        });
     }
 
-    function displayRecentBooks(books) {
-        const recentBooksList = $('#recentBooks');
-        recentBooksList.empty();
+    function displayBooks(books) {
+        const container = $('#booksContainer');
+        container.empty();
 
-        if (books.length === 0) {
-            recentBooksList.append('<li class="list-group-item">No books available</li>');
+        books.forEach(book => {
+            const stockStatus = getStockStatus(book.bookQuantity);
+            const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
+
+            const priceDisplay = hasDiscount ?
+                `<span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                 <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>` :
+                `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
+
+            const countdown = hasDiscount ?
+                `<div class="sale-countdown mt-2" data-end="${new Date(book.saleEndDate).getTime()}">
+                 <small class="text-danger">Sale ends in: <span class="countdown-timer"></span></small>
+             </div>` : '';
+
+            const saleBadge = hasDiscount ?
+                `<span class="sale-badge badge bg-danger">SALE</span>` : '';
+
+            const card = `
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card book-card h-100">
+                    ${saleBadge}
+                    ${book.bookImage ?
+                `<img src="${book.bookImage}" class="book-image card-img-top" alt="${book.bookTitle}">` :
+                `<div class="book-image card-img-top d-flex align-items-center justify-content-center bg-light">
+                            <i class="fas fa-book fa-3x text-muted"></i>
+                         </div>`
+            }
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${book.bookTitle}</h5>
+                        <p class="card-text text-muted">by ${book.bookAuthor?.authorName || 'Unknown Author'}</p>
+                        <p class="book-category">${book.bookCategory?.categoryName || 'Uncategorized'}</p>
+                        <div class="mt-auto">
+                            <div class="price-section">
+                                ${priceDisplay}
+                            </div>
+                            ${countdown}
+                            <p class="stock-info ${stockStatus.class}">
+                                <i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}
+                            </p>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary view-details-btn" data-id="${book.bookId}">
+                                    <i class="fas fa-info-circle me-1"></i> Details
+                                </button>
+                                ${book.bookQuantity > 0 ?
+                `<button class="btn btn-primary add-to-cart-btn" data-id="${book.bookId}">
+                                        <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                                    </button>` :
+                `<button class="btn btn-secondary" disabled>Out of Stock</button>`
+            }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+            container.append(card);
+        });
+
+        // Initialize countdown timers
+        initializeCountdowns();
+    }
+
+    function initializeCountdowns() {
+        $('.sale-countdown').each(function() {
+            const endTime = $(this).data('end');
+            const countdownElement = $(this).find('.countdown-timer');
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    countdownElement.text('Sale ended');
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownElement.text(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        });
+    }
+
+    function getStockStatus(quantity) {
+        if (quantity === 0) {
+            return { text: 'Out of Stock', class: 'out-of-stock', icon: 'fa-times-circle' };
+        } else if (quantity < 5) {
+            return { text: `Only ${quantity} left`, class: 'low-stock', icon: 'fa-exclamation-triangle' };
+        } else {
+            return { text: 'In Stock', class: 'in-stock', icon: 'fa-check-circle' };
+        }
+    }
+
+    function showBookDetails(bookId) {
+        const book = allBooks.find(b => b.bookId === bookId);
+        if (!book) return;
+
+        const stockStatus = getStockStatus(book.bookQuantity);
+        const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
+
+        // Display both prices if discounted
+        if (hasDiscount) {
+            $('#detailsPrice').html(`
+                <span class="original-price">$${book.bookPrice.toFixed(2)}</span>
+                <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>
+            `);
+        } else {
+            $('#detailsPrice').html(`<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`);
+        }
+
+        $('#detailsImage').attr('src', book.bookImage || 'https://via.placeholder.com/300x400?text=No+Image');
+        $('#detailsTitle').text(book.bookTitle);
+        $('#detailsAuthor').text(`by ${book.bookAuthor?.authorName || 'Unknown Author'}`);
+        $('#detailsDescription').text(book.bookDescription || 'No description available.');
+        $('#detailsCategory').text(book.bookCategory?.categoryName || 'Unknown');
+        $('#detailsPublisher').text(book.bookPublisher?.publisherName || 'Unknown');
+        $('#detailsQuantity').text(book.bookQuantity);
+        $('#detailsStock').html(`<span class="${stockStatus.class}"><i class="fas ${stockStatus.icon}"></i> ${stockStatus.text}</span>`);
+
+        // Set up add to cart button in modal
+        $('#addToCartModalBtn').off('click').on('click', function() {
+            const quantity = parseInt($('#quantityInput').val()) || 1;
+            addToCart(bookId, quantity);
+            $('#bookDetailsModal').modal('hide');
+        });
+
+        // Enable/disable add to cart button based on stock
+        if (book.bookQuantity === 0) {
+            $('#addToCartModalBtn').prop('disabled', true).text('Out of Stock');
+            $('#quantityInput').prop('disabled', true);
+        } else {
+            $('#addToCartModalBtn').prop('disabled', false).text('Add to Cart');
+            $('#quantityInput').prop('disabled', false)
+                .attr('max', book.bookQuantity)
+                .val(1);
+        }
+
+        $('#bookDetailsModal').modal('show');
+    }
+
+    function filterBooks() {
+        const searchTerm = $('#searchInput').val().toLowerCase();
+        const categoryFilter = $('#categoryFilter').val();
+        const authorFilter = $('#authorFilter').val();
+        const sortOption = $('#sortSelect').val();
+
+        let filteredBooks = allBooks;
+
+        // Apply search filter
+        if (searchTerm) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookTitle.toLowerCase().includes(searchTerm) ||
+                (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
+                (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        // Apply category filter
+        if (categoryFilter) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookCategory?.categoryName === categoryFilter
+            );
+        }
+
+        // Apply author filter
+        if (authorFilter) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookAuthor?.authorName === authorFilter
+            );
+        }
+
+        // Apply sorting
+        filteredBooks = sortBooks(filteredBooks, sortOption);
+
+        // Reset displayed books count
+        displayedBooks = 12;
+
+        // Clear and display filtered books
+        $('#booksContainer').empty();
+        displayBooks(filteredBooks.slice(0, displayedBooks));
+
+        // Show/hide load more button
+        if (filteredBooks.length > displayedBooks) {
+            $('#loadMoreContainer').show();
+        } else {
+            $('#loadMoreContainer').hide();
+        }
+
+        // Show no results message if needed
+        if (filteredBooks.length === 0) {
+            $('#noBooksAlert').show();
+        } else {
+            $('#noBooksAlert').hide();
+        }
+    }
+
+    function sortBooks(books, sortOption) {
+        switch(sortOption) {
+            case 'title':
+                return books.sort((a, b) => a.bookTitle.localeCompare(b.bookTitle));
+            case 'title_desc':
+                return books.sort((a, b) => b.bookTitle.localeCompare(a.bookTitle));
+            case 'author':
+                return books.sort((a, b) => {
+                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                    return authorA.localeCompare(authorB);
+                });
+            case 'author_desc':
+                return books.sort((a, b) => {
+                    const authorA = a.bookAuthor?.authorName || 'Unknown Author';
+                    const authorB = b.bookAuthor?.authorName || 'Unknown Author';
+                    return authorB.localeCompare(authorA);
+                });
+            case 'category':
+                return books.sort((a, b) => {
+                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                    return categoryA.localeCompare(categoryB);
+                });
+            case 'category_desc':
+                return books.sort((a, b) => {
+                    const categoryA = a.bookCategory?.categoryName || 'Uncategorized';
+                    const categoryB = b.bookCategory?.categoryName || 'Uncategorized';
+                    return categoryB.localeCompare(categoryA);
+                });
+            case 'price_low':
+                return books.sort((a, b) => a.bookPrice - b.bookPrice);
+            case 'price_high':
+                return books.sort((a, b) => b.bookPrice - a.bookPrice);
+            default:
+                return books;
+        }
+    }
+
+    function clearFilters() {
+        $('#searchInput').val('');
+        $('#categoryFilter').val('');
+        $('#authorFilter').val('');
+        $('#sortSelect').val('title');
+        filterBooks();
+    }
+
+    function loadMoreBooks() {
+        const searchTerm = $('#searchInput').val().toLowerCase();
+        const categoryFilter = $('#categoryFilter').val();
+        const authorFilter = $('#authorFilter').val();
+        const sortOption = $('#sortSelect').val();
+
+        let filteredBooks = allBooks;
+
+        if (searchTerm) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookTitle.toLowerCase().includes(searchTerm) ||
+                (book.bookAuthor?.authorName && book.bookAuthor.authorName.toLowerCase().includes(searchTerm)) ||
+                (book.bookCategory?.categoryName && book.bookCategory.categoryName.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        if (categoryFilter) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookCategory?.categoryName === categoryFilter
+            );
+        }
+
+        if (authorFilter) {
+            filteredBooks = filteredBooks.filter(book =>
+                book.bookAuthor?.authorName === authorFilter
+            );
+        }
+
+        // Apply sorting
+        filteredBooks = sortBooks(filteredBooks, sortOption);
+
+        displayedBooks += 12;
+        displayBooks(filteredBooks.slice(0, displayedBooks));
+
+        if (filteredBooks.length <= displayedBooks) {
+            $('#loadMoreContainer').hide();
+        }
+    }
+
+    function addToCart(bookId, quantity) {
+        const book = allBooks.find(b => b.bookId === bookId);
+        if (!book) return;
+
+        // Use discounted price if available, otherwise use regular price
+        const effectivePrice = (book.discountedPrice !== null && book.discountedPrice !== undefined)
+            ? book.discountedPrice
+            : book.bookPrice;
+
+        // Check if book is already in cart
+        const existingItemIndex = cart.findIndex(item => item.bookId === bookId);
+
+        if (existingItemIndex >= 0) {
+            // Update quantity if already in cart
+            const newQuantity = cart[existingItemIndex].quantity + quantity;
+
+            // Check if requested quantity exceeds available stock
+            if (newQuantity > book.bookQuantity) {
+                alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
+                return;
+            }
+
+            cart[existingItemIndex].quantity = newQuantity;
+        } else {
+            // Add new item to cart
+            if (quantity > book.bookQuantity) {
+                alert(`Cannot add more than available stock. Only ${book.bookQuantity} available.`);
+                return;
+            }
+
+            cart.push({
+                bookId: book.bookId,
+                title: book.bookTitle,
+                price: effectivePrice,  // Use the correct price (discounted if available)
+                image: book.bookImage,
+                author: book.bookAuthor?.authorName || 'Unknown Author',
+                quantity: quantity,
+                maxQuantity: book.bookQuantity
+            });
+        }
+
+        // Save cart to localStorage
+        localStorage.setItem(cartKey, JSON.stringify(cart));
+
+        // Update cart count
+        updateCartCount();
+
+        // Show success message
+        alert(`Added "${book.bookTitle}" to cart at $${effectivePrice.toFixed(2)} each!`);
+    }
+
+    function updateCartCount() {
+        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+        $('#cartCount').text(totalItems);
+    }
+
+    function showCart() {
+        const cartItemsList = $('#cartItemsList');
+        cartItemsList.empty();
+
+        if (cart.length === 0) {
+            $('#emptyCartMessage').show();
+            $('#cartItemsContainer').hide();
+            $('#checkoutBtn').prop('disabled', true);
+        } else {
+            $('#emptyCartMessage').hide();
+            $('#cartItemsContainer').show();
+            $('#checkoutBtn').prop('disabled', false);
+
+            let total = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                ${item.image ?
+                    `<img src="${item.image}" style="width: 50px; height: 70px; object-fit: cover;"
+                                         class="me-3" alt="${item.title}"
+                                         onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'">` :
+                    `<div class="me-3" style="width: 50px; height: 70px; background: #f8f9fa;
+                                      display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-book text-muted"></i>
+                                     </div>`
+                }
+                                <div>
+                                    <div class="fw-bold">${item.title}</div>
+                                    <div class="text-muted">by ${item.author}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>$${item.price.toFixed(2)}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <button class="btn btn-sm btn-outline-secondary decrease-quantity"
+                                        data-id="${item.bookId}" ${item.quantity <= 1 ? 'disabled' : ''}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="mx-2">${item.quantity}</span>
+                                <button class="btn btn-sm btn-outline-secondary increase-quantity"
+                                        data-id="${item.bookId}" ${item.quantity >= item.maxQuantity ? 'disabled' : ''}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>$${itemTotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger remove-from-cart" data-id="${item.bookId}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                cartItemsList.append(row);
+            });
+
+            $('#cartTotal').text(`$${total.toFixed(2)}`);
+
+            // Add event listeners to cart buttons
+            $('.increase-quantity').on('click', function() {
+                const bookId = $(this).data('id');
+                updateCartItemQuantity(bookId, 1);
+            });
+
+            $('.decrease-quantity').on('click', function() {
+                const bookId = $(this).data('id');
+                updateCartItemQuantity(bookId, -1);
+            });
+
+            $('.remove-from-cart').on('click', function() {
+                const bookId = $(this).data('id');
+                removeFromCart(bookId);
+            });
+        }
+
+        $('#cartModal').modal('show');
+    }
+
+    function updateCartItemQuantity(bookId, change) {
+        const itemIndex = cart.findIndex(item => item.bookId === bookId);
+        if (itemIndex === -1) return;
+
+        const newQuantity = cart[itemIndex].quantity + change;
+
+        // Check if new quantity is valid
+        if (newQuantity < 1) {
+            removeFromCart(bookId);
             return;
         }
 
-        // Show up to 4 recent books
-        books.slice(0, 4).forEach(book => {
-            recentBooksList.append(`
-                <li class="list-group-item">
-                    <strong>${book.bookTitle}</strong> by ${book.bookAuthor.authorName}
-                </li>
-            `);
+        // Check if new quantity exceeds available stock
+        if (newQuantity > cart[itemIndex].maxQuantity) {
+            alert(`Cannot add more than available stock. Only ${cart[itemIndex].maxQuantity} available.`);
+            return;
+        }
+
+        cart[itemIndex].quantity = newQuantity;
+        localStorage.setItem(cartKey, JSON.stringify(cart));
+        updateCartCount();
+        showCart(); // Refresh cart view
+    }
+
+    function removeFromCart(bookId) {
+        cart = cart.filter(item => item.bookId !== bookId);
+        localStorage.setItem(cartKey, JSON.stringify(cart));
+        updateCartCount();
+        showCart(); // Refresh cart view
+    }
+
+    function showCheckout() {
+        // Build order summary
+        let summaryHTML = '';
+        let total = 0;
+
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+
+            summaryHTML += `
+                <div class="d-flex justify-content-between">
+                    <div>${item.title} x${item.quantity}</div>
+                    <div>$${itemTotal.toFixed(2)}</div>
+                </div>
+            `;
         });
+
+        $('#checkoutSummary').html(summaryHTML);
+        $('#checkoutTotal').text(`$${total.toFixed(2)}`);
+
+        // Show checkout modal
+        $('#cartModal').modal('hide');
+        $('#checkoutModal').modal('show');
+    }
+
+    function processPayment() {
+        if ($('#creditCard').is(':checked')) {
+            const cardNumber = $('#cardNumber').val();
+            const expiryDate = $('#expiryDate').val();
+            const cvv = $('#cvv').val();
+            const cardholderName = $('#cardholderName').val();
+            if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+                alert('Please fill in all credit card details');
+                return;
+            }
+            if (!/^\d{16}$/.test(cardNumber.replace(/\s/g, ''))) {
+                alert('Please enter a valid card number');
+                return;
+            }
+        }
+
+        $('#confirmPaymentBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+        // Prepare purchase requests
+        const purchaseRequests = cart.map(item => ({
+            bookId: item.bookId,
+            quantity: item.quantity
+        }));
+
+        // Make API call to process the order
+        makeApiCall('/api/v1/orders/place', 'POST', purchaseRequests)
+            .then(order => {
+                console.log("Order placed:", order);
+
+                $('#orderId').text("#" + order.id);
+
+                // Clear cart
+                cart = [];
+                localStorage.removeItem(cartKey);
+                updateCartCount();
+
+                $('#checkoutModal').modal('hide');
+                $('#paymentSuccessModal').modal('show');
+            })
+            .catch(err => {
+                alert("Error: " + (err.responseJSON?.message || 'Failed to process order'));
+            })
+            .finally(() => {
+                $('#confirmPaymentBtn').prop('disabled', false).text('Confirm Payment');
+            });
     }
 </script>
 </body>
