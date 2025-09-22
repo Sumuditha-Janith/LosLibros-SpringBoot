@@ -6,6 +6,8 @@
   <title>Manage Reviews - LosLibros</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
   <style>
     body {
       background-color: #f8f9fa;
@@ -155,6 +157,8 @@
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   $(document).ready(function() {
     // Check authentication
@@ -169,8 +173,14 @@
 
     // Verify user has admin/employee role
     if (role !== 'ADMIN' && role !== 'EMPLOYEE') {
-      alert('Access denied. You need admin or employee privileges to access this page.');
-      window.location.href = role === 'USER' ? 'userDashboard.html' : 'signIn.html';
+      Swal.fire({
+        icon: 'error',
+        title: 'Access Denied',
+        text: 'You need admin or employee privileges to access this page.',
+        confirmButtonColor: '#0d6efd'
+      }).then(() => {
+        window.location.href = role === 'USER' ? 'userDashboard.html' : 'signIn.html';
+      });
       return;
     }
 
@@ -217,7 +227,12 @@
             loadReviewsFallback();
           } else {
             $('#noReviews').show();
-            alert('Failed to load reviews. Please try again.');
+            Swal.fire({
+              icon: 'error',
+              title: 'Load Error',
+              text: 'Failed to load reviews. Please try again.',
+              confirmButtonColor: '#0d6efd'
+            });
           }
         }
       });
@@ -267,7 +282,12 @@
         },
         error: function() {
           $('#noReviews').show();
-          alert('Failed to load books for reviews.');
+          Swal.fire({
+            icon: 'error',
+            title: 'Load Error',
+            text: 'Failed to load books for reviews.',
+            confirmButtonColor: '#0d6efd'
+          });
         }
       });
     }
@@ -344,22 +364,41 @@
     }
 
     function deleteReview(reviewId) {
-      if (!confirm('Are you sure you want to delete this review?')) {
-        return;
-      }
+      Swal.fire({
+        title: 'Delete Review?',
+        text: 'Are you sure you want to delete this review?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const API_BASE_URL = 'http://localhost:8080';
 
-      const API_BASE_URL = 'http://localhost:8080';
-
-      $.ajax({
-        url: `${API_BASE_URL}/api/v1/reviews/${reviewId}`,
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-        success: function() {
-          alert('Review deleted successfully!');
-          loadAllReviews(); // Reload the reviews
-        },
-        error: function(xhr) {
-          alert('Error: ' + (xhr.responseJSON?.message || 'Failed to delete review'));
+          $.ajax({
+            url: `${API_BASE_URL}/api/v1/reviews/${reviewId}`,
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+            success: function() {
+              Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: 'Review deleted successfully!',
+                confirmButtonColor: '#0d6efd'
+              });
+              loadAllReviews(); // Reload the reviews
+            },
+            error: function(xhr) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Delete Failed',
+                text: 'Error: ' + (xhr.responseJSON?.message || 'Failed to delete review'),
+                confirmButtonColor: '#0d6efd'
+              });
+            }
+          });
         }
       });
     }
