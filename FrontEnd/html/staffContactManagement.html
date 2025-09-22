@@ -34,9 +34,15 @@
     .staff-reply {
       background-color: #e8f4fd;
       border-left: 4px solid #17a2b8;
+      margin-left: 30px;
     }
     .user-message {
       background-color: #ffffff;
+    }
+    .user-reply {
+      background-color: #f0f8ff;
+      border-left: 4px solid #007bff;
+      margin-left: 30px;
     }
     .timestamp {
       font-size: 0.85rem;
@@ -58,6 +64,26 @@
       border-radius: 50%;
       display: inline-block;
       margin-right: 5px;
+    }
+    .thread-container {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 15px;
+      background-color: #fafafa;
+    }
+    .conversation-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #e9ecef;
+    }
+    .scroll-to-bottom {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 100;
     }
   </style>
 </head>
@@ -222,13 +248,21 @@
               <div class="col-md-6">
                 <strong>Status:</strong> <span id="messageStatus">-</span>
               </div>
+              <div class="col-md-12 mt-2">
+                <strong>Conversation:</strong> <span id="messageCount">0 messages</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Thread Messages -->
-        <div id="threadContainer">
-          <!-- Thread messages will be populated here -->
+        <!-- Thread Messages with Scrollable Container -->
+        <div class="position-relative">
+          <div class="thread-container mb-3" id="threadContainer">
+            <!-- Thread messages will be populated here -->
+          </div>
+          <button class="btn btn-sm btn-outline-primary scroll-to-bottom" id="scrollToBottomBtn" style="display: none;">
+            <i class="fas fa-arrow-down"></i> Scroll to Bottom
+          </button>
         </div>
 
         <!-- Reply Section -->
@@ -236,8 +270,8 @@
           <hr>
           <h6>Reply to User</h6>
           <div class="mb-3">
-                        <textarea class="form-control" id="replyMessage" rows="4"
-                                  placeholder="Type your reply message..."></textarea>
+            <textarea class="form-control" id="replyMessage" rows="4"
+                      placeholder="Type your reply message..."></textarea>
           </div>
           <div class="d-flex gap-2">
             <button class="btn btn-primary" id="sendReplyBtn">
@@ -293,6 +327,7 @@
     $('#sendReplyBtn').click(sendReply);
     $('#closeThreadBtn').click(closeThread);
     $('#markPendingBtn').click(reopenThread);
+    $('#scrollToBottomBtn').click(scrollToBottom);
   });
 
   function initializeNavbar() {
@@ -334,7 +369,6 @@
 
     makeApiCall('/api/v1/contact/messages', 'GET')
             .then(response => {
-              // Fix: Extract data from the API response
               if (response && response.data) {
                 allMessages = response.data;
                 displayMessages(allMessages);
@@ -388,7 +422,6 @@
     $('#totalCount').text(`${totalCount} Total`);
   }
 
-
   function displayMessages(messages) {
     const container = $('#messagesContainer');
     container.empty();
@@ -430,7 +463,7 @@
                                 <div class="timestamp">
                                     <i class="fas fa-clock me-1"></i>Received: ${formatDateTime(message.createdAt)}
                                     ${message.repliedAt ?
-              ` • <i class="fas fa-reply me-1"></i>Replied: ${formatDateTime(message.repliedAt)}` :
+              ` • <i class="fas fa-reply me-1"></i>Last reply: ${formatDateTime(message.repliedAt)}` :
               ''
       }
                                 </div>
@@ -475,12 +508,10 @@
 
     let filtered = allMessages;
 
-    // Apply status filter
     if (statusFilter) {
       filtered = filtered.filter(msg => msg.status === statusFilter);
     }
 
-    // Apply date filter
     if (dateFilter) {
       const now = new Date();
       filtered = filtered.filter(msg => {
@@ -500,7 +531,6 @@
       });
     }
 
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(msg =>
               msg.subject.toLowerCase().includes(searchTerm) ||
@@ -561,52 +591,92 @@
     const originalMessage = thread.originalMessage;
     const replies = thread.replies || [];
     currentThreadStatus = originalMessage.status;
+    const totalMessages = 1 + (replies ? replies.length : 0); // Original message + replies
 
     // Update modal title and user info
-    $('#threadModalTitle').text(`Thread: ${originalMessage.subject}`);
+    $('#threadModalTitle').text(`Conversation: ${originalMessage.subject}`);
     $('#userName').text(originalMessage.userName);
     $('#userEmail').text(originalMessage.userEmail);
     $('#messageDate').text(formatDateTime(originalMessage.createdAt));
     $('#messageStatus').html(getStatusBadge(originalMessage.status));
+    $('#messageCount').text(`${totalMessages} messages in this conversation`);
 
-    // Build thread content
-    let threadHTML = `
-            <div class="card user-message mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h6><i class="fas fa-user me-1"></i> ${originalMessage.userName}</h6>
-                            <p class="mb-1">${originalMessage.message}</p>
-                        </div>
-                        <small class="timestamp">${formatDateTime(originalMessage.createdAt)}</small>
-                    </div>
-                </div>
+    // Build thread content with scrollable container
+    let threadHTML = '';
+
+    // Original message
+    threadHTML += `
+      <div class="conversation-item user-message">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <strong><i class="fas fa-user me-1"></i> ${originalMessage.userName}</strong>
+          <small class="timestamp">${formatDateTime(originalMessage.createdAt)}</small>
+        </div>
+        <p class="mb-1">${originalMessage.message}</p>
+        <small class="text-muted">Original message</small>
+      </div>
+    `;
+
+    // Replies
+    if (replies && replies.length > 0) {
+      replies.forEach(reply => {
+        const isStaffReply = reply.staffId !== null;
+        threadHTML += `
+          <div class="conversation-item ${isStaffReply ? 'staff-reply' : 'user-reply'}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <strong><i class="fas ${isStaffReply ? 'fa-headset' : 'fa-user'} me-1"></i>
+                  ${isStaffReply ? `Staff (${reply.staffName})` : originalMessage.userName}
+              </strong>
+              <small class="timestamp">${formatDateTime(reply.createdAt)}</small>
             </div>
+            <p class="mb-1">${reply.message}</p>
+            <small class="text-muted">${isStaffReply ? 'Staff response' : 'User reply'}</small>
+          </div>
         `;
-
-    replies.forEach(reply => {
-      const isStaffReply = reply.staffId !== null;
+      });
+    } else {
       threadHTML += `
-                <div class="card ${isStaffReply ? 'staff-reply' : 'user-message'} mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6><i class="fas ${isStaffReply ? 'fa-headset' : 'fa-user'} me-1"></i>
-                                    ${isStaffReply ? `Staff (${reply.staffName})` : originalMessage.userName}
-                                </h6>
-                                <p class="mb-1">${reply.message}</p>
-                            </div>
-                            <small class="timestamp">${formatDateTime(reply.createdAt)}</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-    });
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>No replies yet. This conversation is waiting for your response.
+        </div>
+      `;
+    }
 
     $('#threadContainer').html(threadHTML);
 
+    // Set up scroll functionality
+    setupThreadScrolling();
+
     // Update reply section based on status
     updateReplySection(originalMessage.status);
+
+    // Auto-scroll to bottom after a short delay to ensure content is rendered
+    setTimeout(scrollToBottom, 100);
+  }
+
+  function setupThreadScrolling() {
+    const container = $('#threadContainer');
+
+    // Show/hide scroll to bottom button based on scroll position
+    container.on('scroll', function() {
+      const scrollTop = container.scrollTop();
+      const scrollHeight = container[0].scrollHeight;
+      const clientHeight = container[0].clientHeight;
+
+      // Show button if not scrolled to bottom
+      if (scrollHeight - scrollTop > clientHeight + 50) {
+        $('#scrollToBottomBtn').show();
+      } else {
+        $('#scrollToBottomBtn').hide();
+      }
+    });
+
+    container.trigger('scroll');
+  }
+
+  function scrollToBottom() {
+    const container = $('#threadContainer');
+    container.scrollTop(container[0].scrollHeight);
+    $('#scrollToBottomBtn').hide();
   }
 
   function updateReplySection(status) {
@@ -619,13 +689,13 @@
         replySection.show();
         closeBtn.show();
         reopenBtn.hide();
-        $('#replyMessage').prop('disabled', false);
+        $('#replyMessage').prop('disabled', false).focus();
         break;
       case 'RESPONDED':
         replySection.show();
         closeBtn.show();
         reopenBtn.hide();
-        $('#replyMessage').prop('disabled', false);
+        $('#replyMessage').prop('disabled', false).focus();
         break;
       case 'CLOSED':
         replySection.show();
@@ -653,9 +723,8 @@
     makeApiCall(`/api/v1/contact/messages/${currentThreadId}/reply`, 'POST', request)
             .then(response => {
               $('#replyMessage').val('');
-              $('#messageThreadModal').modal('hide');
-              loadMessages(); // Refresh the list
-              alert('Reply sent successfully!');
+              viewMessageThread(currentThreadId);
+              loadMessages();
             })
             .catch(error => {
               alert('Failed to send reply: ' + error);
@@ -690,8 +759,6 @@
       return;
     }
 
-    // For reopening, we'll need to create a new message or update status
-    // This would require additional backend endpoint
     alert('Reopening functionality would require additional backend implementation.');
   }
 </script>

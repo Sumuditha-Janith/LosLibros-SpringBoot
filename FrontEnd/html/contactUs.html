@@ -27,13 +27,31 @@
     .staff-reply {
       background-color: #f8f9fa;
       border-left: 4px solid #28a745;
+      margin-left: 20px;
     }
     .user-message {
       background-color: #ffffff;
     }
+    .user-reply {
+      background-color: #e8f4fd;
+      border-left: 4px solid #17a2b8;
+      margin-left: 20px;
+    }
     .timestamp {
       font-size: 0.85rem;
       color: #6c757d;
+    }
+    .thread-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .status-badge {
+      font-size: 0.8rem;
+    }
+    .conversation-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -102,16 +120,34 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <div id="threadContainer">
+        <!-- Thread Status Info -->
+        <div class="alert alert-info" id="threadStatusInfo">
+          <i class="fas fa-info-circle me-2"></i>
+          <span id="statusText">Loading thread status...</span>
+        </div>
+
+        <div class="thread-container mb-3" id="threadContainer">
           <!-- Thread messages will be populated here -->
         </div>
 
-        <!-- Reply Section (only show if not responded) -->
+        <!-- Reply Section (show only if thread is not closed) -->
         <div id="replySection" style="display: none;">
           <hr>
-          <h6>Reply to this message</h6>
-          <textarea class="form-control mb-2" id="replyMessage" rows="3" placeholder="Type your reply..."></textarea>
-          <button class="btn btn-primary" id="sendReplyBtn">Send Reply</button>
+          <h6>Continue this conversation</h6>
+          <div class="mb-2">
+            <textarea class="form-control" id="replyMessage" rows="3" placeholder="Type your reply..."></textarea>
+          </div>
+          <button class="btn btn-primary" id="sendReplyBtn">
+            <i class="fas fa-reply me-1"></i> Send Reply
+          </button>
+        </div>
+
+        <!-- Closed Thread Message -->
+        <div id="closedThreadMessage" style="display: none;">
+          <div class="alert alert-secondary text-center">
+            <i class="fas fa-lock me-2"></i>
+            This conversation has been closed by staff. You cannot reply anymore.
+          </div>
         </div>
       </div>
     </div>
@@ -123,6 +159,7 @@
 <script src="../js/api.js"></script>
 <script>
   let currentThreadId = null;
+  let currentThreadStatus = null;
 
   $(document).ready(function() {
     // Load navbar
@@ -200,36 +237,60 @@
       return;
     }
 
-    messages.forEach(message => {
+    // Filter to show only parent messages (not replies)
+    const parentMessages = messages.filter(msg => !msg.parentMessageId);
+
+    parentMessages.forEach(message => {
       const statusBadge = getStatusBadge(message.status);
       const canEdit = message.canEdit;
+      const isClosed = message.status === 'CLOSED';
+
+      // Get all replies for this message
+      const replies = messages.filter(msg => msg.parentMessageId === message.id);
+      const lastReply = replies.length > 0 ? replies[replies.length - 1] : null;
 
       const messageCard = `
         <div class="card message-card mb-3 ${message.status ? message.status.toLowerCase() : ''}">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-start">
               <div class="flex-grow-1">
-                <h5 class="card-title">${message.subject || 'No Subject'}</h5>
+                <div class="d-flex align-items-center mb-2">
+                  <h5 class="card-title mb-0 me-2">${message.subject || 'No Subject'}</h5>
+                  ${statusBadge}
+                </div>
                 <p class="card-text">${truncateText(message.message, 100)}</p>
                 <div class="timestamp">
-                  <i class="fas fa-clock me-1"></i>Sent on ${formatDateTime(message.createdAt)}
-                  ${message.repliedAt ?
-              `<br><i class="fas fa-reply me-1"></i>Replied on ${formatDateTime(message.repliedAt)} by ${message.staffName || 'Staff'}` :
-              ''}
+                  <i class="fas fa-clock me-1"></i>Started on ${formatDateTime(message.createdAt)}
+                  ${lastReply ?
+              `<br><i class="fas fa-comments me-1"></i>Last activity: ${formatDateTime(lastReply.createdAt)}` :
+              ''
+      }
+                  ${message.staffName ?
+              `<br><i class="fas fa-headset me-1"></i>Handled by: ${message.staffName}` :
+              ''
+      }
+                  ${replies.length > 0 ?
+              `<br><i class="fas fa-exchange-alt me-1"></i>${replies.length} message(s) in this conversation` :
+              ''
+      }
                 </div>
               </div>
               <div class="text-end">
-                ${statusBadge}
-                ${canEdit ?
+                ${canEdit && !isClosed ?
               `<button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteMessage(${message.id})">
                     <i class="fas fa-trash"></i>
                   </button>` :
-              ''}
+              ''
+      }
               </div>
             </div>
             <button class="btn btn-outline-primary btn-sm mt-2" onclick="viewThread(${message.id})">
-              <i class="fas fa-eye me-1"></i> View Thread
+              <i class="fas fa-comments me-1"></i> View Conversation
             </button>
+            ${!isClosed && message.status === 'RESPONDED' ?
+              `<span class="badge bg-warning status-badge ms-2"><i class="fas fa-comment me-1"></i> Awaiting your response</span>` :
+              ''
+      }
           </div>
         </div>
       `;
@@ -263,7 +324,7 @@
                 $('#newMessageModal').modal('hide');
                 $('#newMessageForm')[0].reset();
                 loadUserMessages();
-                alert('Message sent successfully!');
+                alert('Message sent successfully! Staff will respond soon.');
               } else {
                 throw new Error(response?.message || 'Invalid response from server');
               }
@@ -319,32 +380,57 @@
     const container = $('#threadContainer');
     const originalMessage = thread.originalMessage;
     const replies = thread.replies || [];
+    currentThreadStatus = originalMessage.status;
 
-    $('#threadTitle').text(`Thread: ${originalMessage.subject}`);
+    $('#threadTitle').text(`Conversation: ${originalMessage.subject}`);
 
-    let threadHTML = `
-      <div class="card user-message mb-3">
-        <div class="card-body">
-          <h6>Your Message</h6>
-          <p>${originalMessage.message}</p>
-          <small class="timestamp">Sent on ${formatDateTime(originalMessage.createdAt)}</small>
+    // Update thread status info
+    const statusInfo = $('#threadStatusInfo');
+    const statusText = $('#statusText');
+
+    switch(originalMessage.status) {
+      case 'PENDING':
+        statusInfo.removeClass('alert-info alert-warning alert-secondary').addClass('alert-info');
+        statusText.html('<i class="fas fa-clock me-1"></i> This conversation is pending. Staff will respond soon.');
+        break;
+      case 'RESPONDED':
+        statusInfo.removeClass('alert-info alert-warning alert-secondary').addClass('alert-warning');
+        statusText.html('<i class="fas fa-comment me-1"></i> Staff has responded. You can continue the conversation.');
+        break;
+      case 'CLOSED':
+        statusInfo.removeClass('alert-info alert-warning alert-secondary').addClass('alert-secondary');
+        statusText.html('<i class="fas fa-lock me-1"></i> This conversation has been closed by staff.');
+        break;
+    }
+
+    let threadHTML = '';
+
+    // Original message
+    threadHTML += `
+      <div class="conversation-item user-message">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <strong><i class="fas fa-user me-1"></i> You</strong>
+          <small class="timestamp">${formatDateTime(originalMessage.createdAt)}</small>
         </div>
+        <p class="mb-1">${originalMessage.message}</p>
+        <small class="text-muted">Original message</small>
       </div>
     `;
 
+    // Replies
     if (replies && replies.length > 0) {
       replies.forEach(reply => {
         const isStaffReply = reply.staffId !== null && reply.staffId !== undefined;
         threadHTML += `
-          <div class="card ${isStaffReply ? 'staff-reply' : 'user-message'} mb-3">
-            <div class="card-body">
-              <h6>${isStaffReply ? `Reply from ${reply.staffName || 'Staff'}` : 'Your Reply'}</h6>
-              <p>${reply.message}</p>
-              <small class="timestamp">
-                ${formatDateTime(reply.createdAt)}
-                ${isStaffReply && reply.staffName ? ` • ${reply.staffName}` : ''}
-              </small>
+          <div class="conversation-item ${isStaffReply ? 'staff-reply' : 'user-reply'}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <strong><i class="fas ${isStaffReply ? 'fa-headset' : 'fa-user'} me-1"></i>
+                  ${isStaffReply ? `Staff (${reply.staffName || 'Support'})` : 'You'}
+              </strong>
+              <small class="timestamp">${formatDateTime(reply.createdAt)}</small>
             </div>
+            <p class="mb-1">${reply.message}</p>
+            <small class="text-muted">${isStaffReply ? 'Staff response' : 'Your reply'}</small>
           </div>
         `;
       });
@@ -358,12 +444,18 @@
 
     container.html(threadHTML);
 
-    // Show reply section only if the message is still pending
-    if (originalMessage.status === 'PENDING') {
-      $('#replySection').show();
-    } else {
+    // Show/hide reply section based on thread status
+    if (originalMessage.status === 'CLOSED') {
       $('#replySection').hide();
+      $('#closedThreadMessage').show();
+    } else {
+      $('#replySection').show();
+      $('#closedThreadMessage').hide();
+      $('#replyMessage').val('').focus();
     }
+
+    // Scroll to bottom of thread
+    container.scrollTop(container[0].scrollHeight);
   }
 
   function sendReply() {
@@ -377,7 +469,7 @@
     $('#sendReplyBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
 
     const request = {
-      subject: 'Reply',
+      subject: 'Reply to conversation', // This will be ignored for replies
       message: replyText,
       parentMessageId: currentThreadId
     };
@@ -390,7 +482,9 @@
 
               if (response && (response.status === 200 || response.data)) {
                 $('#replyMessage').val('');
+                // Refresh the thread to show the new reply
                 viewThread(currentThreadId);
+                // Refresh the messages list
                 loadUserMessages();
               } else {
                 throw new Error(response?.message || 'Failed to send reply');
@@ -407,12 +501,12 @@
               alert(errorMsg);
             })
             .finally(() => {
-              $('#sendReplyBtn').prop('disabled', false).html('Send Reply');
+              $('#sendReplyBtn').prop('disabled', false).html('<i class="fas fa-reply me-1"></i> Send Reply');
             });
   }
 
   function deleteMessage(messageId) {
-    if (!confirm('Are you sure you want to delete this message?')) {
+    if (!confirm('Are you sure you want to delete this message? This will delete the entire conversation thread.')) {
       return;
     }
 
@@ -420,7 +514,8 @@
             .then(response => {
               if (response && response.status === 200) {
                 loadUserMessages();
-                alert('Message deleted successfully');
+                $('#messageThreadModal').modal('hide');
+                alert('Message and conversation deleted successfully');
               } else {
                 throw new Error(response?.message || 'Failed to delete message');
               }
@@ -439,13 +534,13 @@
 
   function getStatusBadge(status) {
     const statusConfig = {
-      'PENDING': { class: 'bg-warning', text: 'Pending' },
-      'RESPONDED': { class: 'bg-success', text: 'Responded' },
-      'CLOSED': { class: 'bg-secondary', text: 'Closed' }
+      'PENDING': { class: 'bg-warning', text: 'Pending', icon: 'fa-clock' },
+      'RESPONDED': { class: 'bg-success', text: 'Active', icon: 'fa-comments' },
+      'CLOSED': { class: 'bg-secondary', text: 'Closed', icon: 'fa-lock' }
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;
-    return `<span class="badge ${config.class}">${config.text}</span>`;
+    return `<span class="badge ${config.class}"><i class="fas ${config.icon} me-1"></i>${config.text}</span>`;
   }
 
   function truncateText(text, maxLength) {
