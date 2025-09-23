@@ -41,9 +41,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/sales/active").permitAll()
                         .requestMatchers("/api/v1/sales/**").hasRole("ADMIN")
 
-                        //Contact messages - allow users to create and view their own messages/threads
+                        //Contact messages
                         .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/my-messages").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/*/thread").authenticated() // ADD THIS LINE
+                        .requestMatchers(HttpMethod.GET, "/api/v1/contact/messages/*/thread").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/contact/messages").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/contact/messages/*").authenticated()
 

@@ -51,11 +51,10 @@ public class ContactServiceImpl implements ContactService {
         ContactMessage parentMessage = contactMessageRepository.findById(parentMessageId)
                 .orElseThrow(() -> new RuntimeException("Parent message not found"));
 
-        // Create reply message
         ContactMessage reply = ContactMessage.builder()
                 .subject("Re: " + parentMessage.getSubject())
                 .message(request.getMessage())
-                .user(parentMessage.getUser()) // Original user
+                .user(parentMessage.getUser())
                 .staff(staff)
                 .createdAt(LocalDateTime.now())
                 .repliedAt(LocalDateTime.now())
@@ -64,7 +63,6 @@ public class ContactServiceImpl implements ContactService {
                 .replyMessage(request.getMessage())
                 .build();
 
-        // Update parent message status
         parentMessage.setStatus(MessageStatus.RESPONDED);
         parentMessage.setReplyMessage(request.getMessage());
         parentMessage.setRepliedAt(LocalDateTime.now());

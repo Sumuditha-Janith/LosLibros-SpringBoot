@@ -14,7 +14,6 @@ public class OTPService {
         Random random = new Random();
         String otp = String.format("%06d", random.nextInt(999999));
 
-        // Store OTP with expiration time (5 minutes)
         otpStorage.put(email, new OTPData(otp, System.currentTimeMillis() + 300000));
 
         return otp;

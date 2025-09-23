@@ -29,7 +29,6 @@ public class PublisherServiceImpl implements PublisherService {
         Publisher publisher = modelMapper.map(publisherDTO, Publisher.class);
         Publisher savedPublisher = publisherRepository.save(publisher);
         PublisherDTO dto = modelMapper.map(savedPublisher, PublisherDTO.class);
-        // Set book count
         dto.setBookCount(savedPublisher.getBooks() != null ? savedPublisher.getBooks().size() : 0);
         return dto;
     }
@@ -39,7 +38,6 @@ public class PublisherServiceImpl implements PublisherService {
         return publisherRepository.findAll().stream()
                 .map(publisher -> {
                     PublisherDTO dto = modelMapper.map(publisher, PublisherDTO.class);
-                    // Set book count
                     dto.setBookCount(publisher.getBooks() != null ? publisher.getBooks().size() : 0);
                     return dto;
                 })
@@ -51,7 +49,6 @@ public class PublisherServiceImpl implements PublisherService {
         Publisher publisher = publisherRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Publisher not found with id: " + id));
         PublisherDTO dto = modelMapper.map(publisher, PublisherDTO.class);
-        // Set book count
         dto.setBookCount(publisher.getBooks() != null ? publisher.getBooks().size() : 0);
         return dto;
     }
@@ -73,7 +70,6 @@ public class PublisherServiceImpl implements PublisherService {
 
         Publisher updatedPublisher = publisherRepository.save(existingPublisher);
         PublisherDTO dto = modelMapper.map(updatedPublisher, PublisherDTO.class);
-        // Set book count
         dto.setBookCount(updatedPublisher.getBooks() != null ? updatedPublisher.getBooks().size() : 0);
         return dto;
     }

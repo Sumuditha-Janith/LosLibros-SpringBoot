@@ -48,8 +48,6 @@ public class AuthController {
     @PostMapping("/resend-otp")
     public ResponseEntity<ApiResponse> resendOtp(@RequestParam String email) {
         try {
-            // For registration, we need the RegisterDTO to resend OTP
-            // This would need to be stored temporarily or the user would need to resubmit the form
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse(400, "Please submit the registration form again", null));

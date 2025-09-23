@@ -45,7 +45,6 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("No items provided for order.");
         }
 
-        // Get user details
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
@@ -61,7 +60,6 @@ public class OrderServiceImpl implements OrderService {
                 throw new RuntimeException("Not enough stock for book: " + book.getBookTitle());
             }
 
-            // Check if book is on sale
             Double finalPrice = book.getBookPrice();
             Boolean onSale = false;
 
@@ -75,7 +73,6 @@ public class OrderServiceImpl implements OrderService {
                 onSale = true;
             }
 
-            // reduce stock
             book.setBookQuantity(book.getBookQuantity() - req.getQuantity());
             bookRepository.save(book);
 

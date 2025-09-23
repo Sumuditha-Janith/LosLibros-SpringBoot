@@ -46,7 +46,7 @@ public class AuthService {
             throw new RuntimeException("Email is already registered");
         }
 
-        // Generate and send OTP
+        //otp gen and send
         String otp = otpService.generateOTP(registerDTO.getEmail());
         emailService.sendOTPEmail(registerDTO.getEmail(), otp);
 
@@ -54,7 +54,6 @@ public class AuthService {
     }
 
     public String verifyOtpAndRegister(String email, String otp, RegisterDTO registerDTO) {
-        // Validate that the email matches
         if (!email.equals(registerDTO.getEmail())) {
             throw new RuntimeException("Email mismatch");
         }
@@ -108,7 +107,7 @@ public class AuthService {
             throw new RuntimeException("Email is already registered");
         }
 
-        // Create user directly without OTP verification for admin actions
+        //create user without otp
         User user = User.builder()
                 .username(registerDTO.getUsername())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
@@ -119,7 +118,6 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Send welcome email with credentials
         sendWelcomeEmail(registerDTO.getEmail(), registerDTO.getUsername(), registerDTO.getPassword());
 
         return "User created successfully by admin";

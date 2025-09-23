@@ -37,7 +37,6 @@ public class AuthorServiceImpl implements AuthorService {
         return authorRepository.findAll().stream()
                 .map(author -> {
                     AuthorDTO dto = modelMapper.map(author, AuthorDTO.class);
-                    // Set book count
                     dto.setBookCount(author.getBooks() != null ? author.getBooks().size() : 0);
                     return dto;
                 })
