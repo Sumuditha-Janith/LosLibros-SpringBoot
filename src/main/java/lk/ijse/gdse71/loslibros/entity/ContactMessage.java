@@ -28,7 +28,7 @@ public class ContactMessage {
 
     @ManyToOne
     @JoinColumn(name = "staff_id")
-    private User staff; // Staff who replied (nullable for initial messages)
+    private User staff;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -41,6 +41,5 @@ public class ContactMessage {
     @Column(columnDefinition = "TEXT")
     private String replyMessage;
 
-    // For tracking conversation thread
-    private Long parentMessageId; // If this is a reply, points to original message
+    private Long parentMessageId;
 }
