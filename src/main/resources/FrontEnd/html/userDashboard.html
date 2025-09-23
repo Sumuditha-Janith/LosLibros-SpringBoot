@@ -290,12 +290,6 @@
                             Credit Card
                         </label>
                     </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="paypal">
-                        <label class="form-check-label" for="paypal">
-                            PayPal
-                        </label>
-                    </div>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="radio" name="paymentMethod" id="cashOnDelivery">
                         <label class="form-check-label" for="cashOnDelivery">
@@ -589,9 +583,9 @@
                 const hasDiscount = book.discountedPrice !== null && book.discountedPrice !== undefined;
 
                 const priceDisplay = hasDiscount ?
-                    `<span class="original-price">$${book.bookPrice.toFixed(2)}</span>
-                     <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>` :
-                    `<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`;
+                    `<span class="original-price">Rs. ${book.bookPrice.toFixed(2)}</span>
+                     <span class="discounted-price">Rs. ${book.discountedPrice.toFixed(2)}</span>` :
+                    `<span class="price-tag">Rs. ${book.bookPrice.toFixed(2)}</span>`;
 
                 const countdown = hasDiscount ?
                     `<div class="sale-countdown mt-2" data-end="${new Date(book.saleEndDate).getTime()}">
@@ -720,11 +714,11 @@
             // Display both prices if discounted
             if (hasDiscount) {
                 $('#detailsPrice').html(`
-                    <span class="original-price">$${book.bookPrice.toFixed(2)}</span>
-                    <span class="discounted-price">$${book.discountedPrice.toFixed(2)}</span>
+                    <span class="original-price">Rs. ${book.bookPrice.toFixed(2)}</span>
+                    <span class="discounted-price">Rs. ${book.discountedPrice.toFixed(2)}</span>
                 `);
             } else {
-                $('#detailsPrice').html(`<span class="price-tag">$${book.bookPrice.toFixed(2)}</span>`);
+                $('#detailsPrice').html(`<span class="price-tag">Rs. ${book.bookPrice.toFixed(2)}</span>`);
             }
 
             $('#detailsImage').attr('src', book.bookImage || 'https://via.placeholder.com/300x400?text=No+Image');
@@ -1009,7 +1003,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'Added to Cart!',
-                text: `"${book.bookTitle}" added to cart at $${effectivePrice.toFixed(2)} each!`,
+                text: `"${book.bookTitle}" added to cart at Rs. ${effectivePrice.toFixed(2)} each!`,
                 showConfirmButton: false,
                 timer: 1500
             });
@@ -1058,7 +1052,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td>$${item.price.toFixed(2)}</td>
+                        <td>Rs. ${item.price.toFixed(2)}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-sm btn-outline-secondary decrease-quantity"
@@ -1072,7 +1066,7 @@
                                 </button>
                             </div>
                         </td>
-                        <td>$${itemTotal.toFixed(2)}</td>
+                        <td>Rs. ${itemTotal.toFixed(2)}</td>
                         <td>
                             <button class="btn btn-sm btn-danger remove-from-cart" data-id="${item.bookId}">
                                 <i class="fas fa-trash"></i>
@@ -1083,7 +1077,7 @@
                     cartItemsList.append(row);
                 });
 
-                $('#cartTotal').text(`$${total.toFixed(2)}`);
+                $('#cartTotal').text(`Rs. ${total.toFixed(2)}`);
 
                 // Add event listeners to cart buttons
                 $('.increase-quantity').on('click', function() {
@@ -1175,13 +1169,13 @@
                 summaryHTML += `
                 <div class="d-flex justify-content-between">
                     <div>${item.title} x${item.quantity}</div>
-                    <div>$${itemTotal.toFixed(2)}</div>
+                    <div>Rs. ${itemTotal.toFixed(2)}</div>
                 </div>
             `;
             });
 
             $('#checkoutSummary').html(summaryHTML);
-            $('#checkoutTotal').text(`$${total.toFixed(2)}`);
+            $('#checkoutTotal').text(`Rs. ${total.toFixed(2)}`);
 
             // Show checkout modal
             $('#cartModal').modal('hide');
