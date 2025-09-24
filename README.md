@@ -111,7 +111,7 @@ This project consists of two separate parts: the backend and the frontend. You n
 <img width="1920" height="1080" alt="Screenshot (353)" src="https://github.com/user-attachments/assets/231639d3-18c6-4fa3-a214-8c6be0df2abd" />
 
 
-Demo Video - https://www.youtube.com/watch?v=myFi6ftH0LE
+Demo Video - https://youtu.be/XYwfn9dGEwY?si=GjE6zFXoWM0gNVdK
 
 
 
